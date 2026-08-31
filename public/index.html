@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>PEYSON 現場雷雕</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="front-body">
+  <main class="front-shell">
+    <header class="brand-header">
+      <div class="eyebrow">PEYSON LIVE ENGRAVING</div>
+      <h1 id="eventName">現場雷雕體驗</h1>
+      <p id="eventSubtitle">手寫簽名・專屬文字</p>
+    </header>
+
+    <section id="modeStep" class="panel step-panel">
+      <div class="step-kicker">STEP 1</div>
+      <h2>選擇製作方式</h2>
+      <div id="modeChoices" class="mode-grid">
+        <button class="mode-card" data-mode="handwriting">
+          <span class="mode-icon">✍︎</span>
+          <strong>手寫簽名</strong>
+          <small>使用觸控筆或手指書寫</small>
+        </button>
+        <button class="mode-card" data-mode="typing">
+          <span class="mode-icon">Aa</span>
+          <strong>輸入文字</strong>
+          <small>選擇字體並即時預覽</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="editorStep" class="panel editor-panel hidden">
+      <div class="editor-heading">
+        <button id="backButton" class="text-button" type="button">‹ 返回</button>
+        <div>
+          <div class="step-kicker">STEP 2</div>
+          <h2 id="editorTitle">設計雷雕內容</h2>
+        </div>
+      </div>
+
+      <div id="handwritingTools" class="tool-row hidden">
+        <div class="tool-group">
+          <span class="tool-label">筆畫粗細</span>
+          <div id="widthChoices" class="segmented"></div>
+        </div>
+        <div class="tool-actions">
+          <button id="undoButton" class="secondary-button" type="button">復原</button>
+          <button id="redoButton" class="secondary-button" type="button">重做</button>
+          <button id="clearButton" class="secondary-button danger-text" type="button">清除</button>
+        </div>
+      </div>
+
+      <div id="typingTools" class="typing-tools hidden">
+        <label class="input-label" for="textInput">雷雕文字</label>
+        <div class="text-input-wrap">
+          <input id="textInput" type="text" autocomplete="off" inputmode="text" placeholder="請輸入文字">
+          <span id="charCounter">0 / 20</span>
+        </div>
+        <div class="input-label">選擇字體</div>
+        <div id="fontChoices" class="font-grid"></div>
+      </div>
+
+      <div class="canvas-label-row">
+        <span>雷雕範圍預覽</span>
+        <small>灰色框線不會輸出</small>
+      </div>
+      <div id="canvasStage" class="canvas-stage">
+        <canvas id="designCanvas"></canvas>
+        <div id="emptyHint" class="canvas-empty">
+          <b>請在框內書寫</b>
+          <span>建議簽名盡量寫大、筆畫不要重疊</span>
+        </div>
+      </div>
+
+      <div class="editor-footer">
+        <p>送出後將自動產生取件號碼，內容送出後無法修改。</p>
+        <button id="submitButton" class="primary-button" type="button">確認送出</button>
+      </div>
+    </section>
+
+    <section id="successStep" class="panel success-panel hidden">
+      <div class="success-check">✓</div>
+      <div class="step-kicker">登記完成</div>
+      <h2>您的取件號碼</h2>
+      <div id="ticketNumber" class="ticket-number">001</div>
+      <p id="printMessage">票券將由出票機自動印出，請妥善保留。</p>
+      <button id="newOrderButton" class="primary-button" type="button">下一位</button>
+    </section>
+  </main>
+
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <b>正在送出，請稍候…</b>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
