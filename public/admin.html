@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111">
+  <title>PEYSON 雷雕後台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="admin-body">
+  <div id="loginOverlay" class="login-overlay">
+    <form id="loginForm" class="login-card">
+      <div class="eyebrow">PEYSON ADMIN</div>
+      <h1>雷雕製作後台</h1>
+      <p>輸入本場活動的後台密碼</p>
+      <input id="passwordInput" type="password" autocomplete="current-password" placeholder="後台密碼" required>
+      <button class="primary-button" type="submit">登入</button>
+      <div id="loginError" class="form-error"></div>
+    </form>
+  </div>
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div>
+        <div class="eyebrow light">PEYSON</div>
+        <h2>Live Engraving</h2>
+      </div>
+      <nav>
+        <button class="nav-button active" data-tab="jobs">製作佇列</button>
+        <button class="nav-button" data-tab="settings">場次設定</button>
+        <button class="nav-button" data-tab="fonts">字體管理</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button id="refreshButton" class="outline-dark-button">重新整理</button>
+        <button id="logoutButton" class="outline-dark-button">登出</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <section id="jobsTab" class="admin-tab">
+        <header class="admin-title-row">
+          <div>
+            <div class="step-kicker">LIVE QUEUE</div>
+            <h1>製作佇列</h1>
+          </div>
+          <div class="status-pill"><span class="live-dot"></span> 自動更新中</div>
+        </header>
+
+        <div class="summary-grid">
+          <article><span>目前總件數</span><b id="totalCount">0</b></article>
+          <article><span>等待製作</span><b id="waitingCount">0</b></article>
+          <article><span>製作中</span><b id="processingCount">0</b></article>
+          <article><span>已完成</span><b id="completedCount">0</b></article>
+        </div>
+
+        <div class="queue-toolbar">
+          <div class="filter-buttons">
+            <button class="filter-button active" data-filter="all">全部</button>
+            <button class="filter-button" data-filter="waiting">等待中</button>
+            <button class="filter-button" data-filter="processing">製作中</button>
+            <button class="filter-button" data-filter="completed">已完成</button>
+          </div>
+          <input id="jobSearch" class="compact-input" type="search" placeholder="搜尋號碼或文字">
+        </div>
+
+        <div id="jobList" class="job-list"></div>
+        <div id="emptyJobs" class="empty-state">目前還沒有送出的製作內容</div>
+      </section>
+
+      <section id="settingsTab" class="admin-tab hidden">
+        <header class="admin-title-row">
+          <div>
+            <div class="step-kicker">EVENT SETTINGS</div>
+            <h1>場次設定</h1>
+          </div>
+        </header>
+        <form id="settingsForm" class="settings-grid">
+          <article class="setting-card">
+            <h3>前台顯示</h3>
+            <label>活動名稱<input name="eventName" required></label>
+            <label>副標題<input name="eventSubtitle"></label>
+            <div class="setting-label">開放功能</div>
+            <label class="check-row"><input name="modeHandwriting" type="checkbox"> 手寫簽名</label>
+            <label class="check-row"><input name="modeTyping" type="checkbox"> 輸入文字</label>
+          </article>
+          <article class="setting-card">
+            <h3>輸出設定</h3>
+            <label>文字字數上限<input name="maxChars" type="number" min="1" max="50"></label>
+            <label>雷雕範圍比例（寬 ÷ 高）<input name="canvasRatio" type="number" min="1" max="10" step="0.1"></label>
+            <label>PNG 輸出寬度<input name="outputWidth" type="number" min="800" max="4000" step="100"></label>
+          </article>
+          <article class="setting-card">
+            <h3>取號與出票</h3>
+            <label>號碼前綴<input name="ticketPrefix" maxlength="8" placeholder="可留白"></label>
+            <label>票面提示文字<input name="ticketMessage"></label>
+            <label class="check-row"><input name="autoPrint" type="checkbox"> 客人送出後自動出票</label>
+            <div class="setting-actions">
+              <button id="printerStatusButton" class="secondary-button" type="button">檢查出票機</button>
+              <span id="printerStatusText"></span>
+            </div>
+          </article>
+          <article class="setting-card">
+            <h3>流水號</h3>
+            <p>輸入 0 後，下一張票將從 001 開始。活動進行中請勿重設。</p>
+            <label>目前計數<input id="counterInput" type="number" min="0" max="999999"></label>
+            <button id="resetCounterButton" class="secondary-button danger-text" type="button">重設流水號</button>
+          </article>
+          <div class="form-wide-actions">
+            <button class="primary-button" type="submit">儲存場次設定</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="fontsTab" class="admin-tab hidden">
+        <header class="admin-title-row">
+          <div>
+            <div class="step-kicker">FONT LIBRARY</div>
+            <h1>字體管理</h1>
+          </div>
+        </header>
+        <div class="font-admin-layout">
+          <form id="fontUploadForm" class="setting-card">
+            <h3>上傳活動字體</h3>
+            <label>前台顯示名稱<input id="fontNameInput" required placeholder="例如：手寫風"></label>
+            <label>字體檔案<input id="fontFileInput" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" required></label>
+            <p>支援 TTF、OTF、WOFF、WOFF2，請確認具有活動及商用授權。</p>
+            <button class="primary-button" type="submit">上傳字體</button>
+          </form>
+          <div>
+            <h3>目前可選字體</h3>
+            <div id="adminFontList" class="admin-font-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="adminToast" class="toast hidden"></div>
+  <script src="/admin.js"></script>
+</body>
+</html>
