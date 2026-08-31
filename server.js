@@ -218,6 +218,7 @@ app.post('/api/jobs', (req, res) => {
     fontId: safeText(req.body?.fontId, 60),
     strokeWidth: Number(req.body?.strokeWidth || 0),
     png: req.body.png,
+    thumbnail: validateDataUrl(req.body?.thumbnail) ? req.body.thumbnail : '',
     svg: typeof req.body?.svg === 'string' && req.body.svg.length < 5 * 1024 * 1024 ? req.body.svg : '',
     status: 'waiting',
     printStatus: store.config.autoPrint ? 'queued' : 'not_requested',
@@ -343,7 +344,7 @@ app.post('/api/admin/fonts', requireAdmin, (req, res) => {
   const name = safeText(req.body?.name, 40);
   const data = String(req.body?.data || '');
   const mime = safeText(req.body?.mime, 80);
-  if (!name || !/^data:font\/|^data:application\/(font|octet-stream)/.test(data)) {
+  if (!name || !/^data:(font\/|application\/(font|octet-stream|x-font-|vnd\.ms-fontobject)).*;base64,/i.test(data)) {
     return res.status(400).json({ success: false, error: '字體名稱或檔案格式不正確' });
   }
   if (data.length > 12 * 1024 * 1024) {
