@@ -50,8 +50,13 @@
     }
   }
 
-  function configureCanvas() {
+  function activeCanvasRatio() {
     const ratio = Number(state.config?.canvasRatio || 5);
+    return state.mode === 'handwriting' ? ratio / 1.3 : ratio;
+  }
+
+  function configureCanvas() {
+    const ratio = activeCanvasRatio();
     stage.style.setProperty('--canvas-ratio', String(ratio));
     const box = stage.getBoundingClientRect();
     const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -267,7 +272,7 @@
   }
 
   function createOutput(width) {
-    const ratio = Number(state.config.canvasRatio || 5);
+    const ratio = activeCanvasRatio();
     const output = document.createElement('canvas');
     output.width = Math.round(width);
     output.height = Math.max(1, Math.round(width / ratio));
@@ -304,7 +309,7 @@
   function createSvg() {
     if (state.mode !== 'handwriting') return '';
     const width = Number(state.config.outputWidth || 2000);
-    const height = Math.round(width / Number(state.config.canvasRatio || 5));
+    const height = Math.round(width / activeCanvasRatio());
     const visualWidth = Math.max(1, canvas.getBoundingClientRect().width);
     const paths = state.strokes.map((stroke) => {
       const lineWidth = (stroke.width * width / visualWidth).toFixed(2);
