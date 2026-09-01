@@ -297,6 +297,7 @@
 
   async function uploadFont(event) {
     event.preventDefault();
+    const form = event.currentTarget;
     const file = $('#fontFileInput').files[0];
     const name = $('#fontNameInput').value.trim();
     if (!file || !name) return;
@@ -307,7 +308,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name, data, mime: file.type })
       });
-      event.currentTarget.reset();
+      form.reset();
       await loadConfig();
       toast('字體已上傳');
     } catch (error) { toast(error.message); }
