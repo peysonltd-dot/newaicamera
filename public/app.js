@@ -217,11 +217,27 @@
   function renderWidths() {
     const wrap = $('#widthChoices');
     wrap.innerHTML = '';
-    const labels = ['細', '中', '粗', '特粗'];
+    const labels = [
+      { zh: '細', en: 'Thin' },
+      { zh: '中', en: 'Medium' },
+      { zh: '粗', en: 'Thick' },
+      { zh: '特粗', en: 'Extra' }
+    ];
     state.config.handwritingWidths.forEach((width, index) => {
       const button = document.createElement('button');
+      const label = labels[index] || { zh: String(width), en: '' };
       button.type = 'button';
-      button.textContent = labels[index] || String(width);
+      button.className = 'bilingual-button';
+      const main = document.createElement('span');
+      main.className = 'button-main';
+      main.textContent = label.zh;
+      button.appendChild(main);
+      if (label.en) {
+        const english = document.createElement('small');
+        english.className = 'button-en';
+        english.textContent = label.en;
+        button.appendChild(english);
+      }
       button.classList.toggle('active', Number(width) === Number(state.strokeWidth));
       button.addEventListener('click', () => {
         state.strokeWidth = Number(width);
