@@ -102,7 +102,8 @@
       title.textContent = job.mode === 'handwriting' ? '手寫簽名' : (job.text || '文字雷雕');
       if (job.mode === 'typing' && job.fontId) title.title = '字體：' + job.fontId;
       const line1 = document.createElement('small');
-      line1.textContent = statusName(job.status) + '・' + formatTime(job.createdAt);
+      const handedness = job.handedness === 'left' ? '左撇子' : (job.handedness === 'right' ? '右撇子' : '未標示');
+      line1.textContent = handedness + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
       const line2 = document.createElement('small');
       line2.textContent = printName(job);
       if (job.printStatus === 'failed') line2.className = 'print-failed';

@@ -24,9 +24,15 @@ button { cursor: pointer; }
 .panel { background: rgba(255,255,255,.93); border: 1px solid rgba(35,32,28,.1); border-radius: 28px; box-shadow: var(--shadow); padding: clamp(22px, 4vw, 40px); }
 .step-kicker { color: #8e8981; letter-spacing: .14em; font-weight: 800; font-size: 11px; }
 .panel h2 { margin: 8px 0 24px; font-size: 26px; letter-spacing: -.02em; }
+.handedness-section { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--line); }
+.handedness-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 520px; }
+.handedness-button { border: 1px solid var(--line); background: #f7f6f3; color: var(--ink); border-radius: 14px; padding: 16px 20px; font-size: 18px; font-weight: 800; transition: .18s ease; }
+.handedness-button:hover { border-color: #222; background: #fff; }
+.handedness-button.active { border-color: #151515; background: #151515; color: #fff; box-shadow: 0 8px 24px rgba(20,20,20,.16); }
 .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
 .mode-card { min-height: 210px; border: 1px solid var(--line); background: #fbfbfa; border-radius: 22px; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: .18s ease; color: var(--ink); }
 .mode-card:hover, .mode-card:active { transform: translateY(-2px); border-color: #222; background: #fff; box-shadow: 0 13px 36px rgba(20,20,20,.08); }
+.mode-card:disabled, .mode-card:disabled:hover { opacity: .42; cursor: not-allowed; transform: none; border-color: var(--line); background: #f6f5f2; box-shadow: none; }
 .mode-icon { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: #eeece8; font-family: Georgia, serif; font-size: 29px; margin-bottom: 18px; }
 .mode-card strong { font-size: 21px; }
 .mode-card small { color: var(--muted); margin-top: 8px; font-size: 14px; }

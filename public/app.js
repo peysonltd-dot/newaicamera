@@ -2,6 +2,7 @@
   const state = {
     config: null,
     mode: null,
+    handedness: null,
     strokes: [],
     redo: [],
     drawing: false,
@@ -197,11 +198,20 @@
     $('#submitButton').disabled = !hasContent || state.submitting;
   }
 
+  function renderHandednessChoices() {
+    document.querySelectorAll('.handedness-button').forEach((button) => {
+      const selected = button.dataset.handedness === state.handedness;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+  }
+
   function renderModeChoices() {
     document.querySelectorAll('.mode-card').forEach((button) => {
       button.classList.toggle('hidden', !state.config.modes.includes(button.dataset.mode));
+      button.disabled = !state.handedness;
     });
-    if (state.config.modes.length === 1) selectMode(state.config.modes[0]);
+    if (state.handedness && state.config.modes.length === 1) selectMode(state.config.modes[0]);
   }
 
   function renderWidths() {
@@ -244,6 +254,7 @@
   }
 
   function selectMode(mode) {
+    if (!state.handedness) return showToast('請先選擇左撇子或右撇子');
     state.mode = mode;
     state.strokes = [];
     state.redo = [];
@@ -261,13 +272,15 @@
     requestAnimationFrame(configureCanvas);
   }
 
-  function resetToMode() {
+  function resetToMode(clearHandedness = false) {
     state.mode = null;
     state.strokes = [];
     state.redo = [];
+    if (clearHandedness) state.handedness = null;
     $('#editorStep').classList.add('hidden');
     $('#successStep').classList.add('hidden');
     $('#modeStep').classList.remove('hidden');
+    renderHandednessChoices();
     renderModeChoices();
   }
 
@@ -332,6 +345,7 @@
     try {
       const body = {
         mode: state.mode,
+        handedness: state.handedness,
         text: state.mode === 'typing' ? $('#textInput').value.trim() : '',
         fontId: state.fontId || '',
         strokeWidth: state.strokeWidth,
@@ -369,6 +383,7 @@
       $('#eventSubtitle').textContent = state.config.eventSubtitle;
       $('#textInput').maxLength = Number(state.config.maxChars);
       await loadFonts(state.config.fonts);
+      renderHandednessChoices();
       renderModeChoices();
       renderWidths();
       renderFontChoices();
@@ -378,11 +393,18 @@
     }
   }
 
+  document.querySelectorAll('.handedness-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.handedness = button.dataset.handedness;
+      renderHandednessChoices();
+      renderModeChoices();
+    });
+  });
   document.querySelectorAll('.mode-card').forEach((button) => {
     button.addEventListener('click', () => selectMode(button.dataset.mode));
   });
-  $('#backButton').addEventListener('click', resetToMode);
-  $('#newOrderButton').addEventListener('click', resetToMode);
+  $('#backButton').addEventListener('click', () => resetToMode(false));
+  $('#newOrderButton').addEventListener('click', () => resetToMode(true));
   $('#undoButton').addEventListener('click', () => {
     const stroke = state.strokes.pop();
     if (stroke) state.redo.push(stroke);

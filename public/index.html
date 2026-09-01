@@ -16,19 +16,30 @@
     </header>
 
     <section id="modeStep" class="panel step-panel">
-      <div class="step-kicker">STEP 1</div>
-      <h2>選擇製作方式</h2>
-      <div id="modeChoices" class="mode-grid">
-        <button class="mode-card" data-mode="handwriting">
-          <span class="mode-icon">✍︎</span>
-          <strong>手寫簽名</strong>
-          <small>使用觸控筆或手指書寫</small>
-        </button>
-        <button class="mode-card" data-mode="typing">
-          <span class="mode-icon">Aa</span>
-          <strong>輸入文字</strong>
-          <small>選擇字體並即時預覽</small>
-        </button>
+      <div class="handedness-section">
+        <div class="step-kicker">STEP 1</div>
+        <h2>請問您是左撇子還是右撇子？</h2>
+        <div id="handednessChoices" class="handedness-grid">
+          <button class="handedness-button" type="button" data-handedness="left" aria-pressed="false">左撇子</button>
+          <button class="handedness-button" type="button" data-handedness="right" aria-pressed="false">右撇子</button>
+        </div>
+      </div>
+
+      <div class="mode-section">
+        <div class="step-kicker">STEP 2</div>
+        <h2>選擇製作方式</h2>
+        <div id="modeChoices" class="mode-grid">
+          <button class="mode-card" data-mode="handwriting">
+            <span class="mode-icon">✍︎</span>
+            <strong>手寫簽名</strong>
+            <small>使用觸控筆或手指書寫</small>
+          </button>
+          <button class="mode-card" data-mode="typing">
+            <span class="mode-icon">Aa</span>
+            <strong>輸入文字</strong>
+            <small>選擇字體並即時預覽</small>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -36,7 +47,7 @@
       <div class="editor-heading">
         <button id="backButton" class="text-button" type="button">‹ 返回</button>
         <div>
-          <div class="step-kicker">STEP 2</div>
+          <div class="step-kicker">STEP 3</div>
           <h2 id="editorTitle">設計雷雕內容</h2>
         </div>
       </div>

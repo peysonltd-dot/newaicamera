@@ -200,6 +200,10 @@ app.post('/api/jobs', (req, res) => {
   if (!store.config.modes.includes(mode)) {
     return res.status(400).json({ success: false, error: '此輸入模式目前未開放' });
   }
+  const handedness = ['left', 'right'].includes(req.body?.handedness) ? req.body.handedness : '';
+  if (!handedness) {
+    return res.status(400).json({ success: false, error: '請選擇左撇子或右撇子' });
+  }
   if (!validateDataUrl(req.body?.png)) {
     return res.status(400).json({ success: false, error: '圖檔格式錯誤或檔案過大' });
   }
@@ -214,6 +218,7 @@ app.post('/api/jobs', (req, res) => {
   const job = {
     id,
     mode,
+    handedness,
     text,
     fontId: safeText(req.body?.fontId, 60),
     strokeWidth: Number(req.body?.strokeWidth || 0),
