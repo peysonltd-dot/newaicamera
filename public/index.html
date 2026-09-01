@@ -20,8 +20,8 @@
         <div class="step-kicker">STEP 1</div>
         <h2>請問您是左手還是右手寫字？</h2>
         <div id="handednessChoices" class="handedness-grid">
-          <button class="handedness-button" type="button" data-handedness="left" aria-pressed="false">左手</button>
-          <button class="handedness-button" type="button" data-handedness="right" aria-pressed="false">右手</button>
+          <button class="handedness-button bilingual-button" type="button" data-handedness="left" aria-pressed="false"><span class="button-main">左手</span><small class="button-en">Left hand</small></button>
+          <button class="handedness-button bilingual-button" type="button" data-handedness="right" aria-pressed="false"><span class="button-main">右手</span><small class="button-en">Right hand</small></button>
         </div>
       </div>
 
@@ -32,11 +32,13 @@
           <button class="mode-card" data-mode="handwriting">
             <span class="mode-icon">✍︎</span>
             <strong>手寫簽名</strong>
+            <span class="button-en">Handwriting</span>
             <small>使用觸控筆或手指書寫</small>
           </button>
           <button class="mode-card" data-mode="typing">
             <span class="mode-icon">Aa</span>
             <strong>輸入文字</strong>
+            <span class="button-en">Typing</span>
             <small>選擇字體並即時預覽</small>
           </button>
         </div>
@@ -45,7 +47,7 @@
 
     <section id="editorStep" class="panel editor-panel hidden">
       <div class="editor-heading">
-        <button id="backButton" class="text-button" type="button">‹ 返回</button>
+        <button id="backButton" class="text-button bilingual-button" type="button"><span class="button-main">‹ 返回</span><small class="button-en">Back</small></button>
         <div>
           <div class="step-kicker">STEP 3</div>
           <h2 id="editorTitle">設計雷雕內容</h2>
@@ -58,9 +60,9 @@
           <div id="widthChoices" class="segmented"></div>
         </div>
         <div class="tool-actions">
-          <button id="undoButton" class="secondary-button" type="button">復原</button>
-          <button id="redoButton" class="secondary-button" type="button">重做</button>
-          <button id="clearButton" class="secondary-button danger-text" type="button">清除</button>
+          <button id="undoButton" class="secondary-button bilingual-button" type="button"><span class="button-main"><span class="button-symbol" aria-hidden="true">↶</span>復原</span><small class="button-en">Undo</small></button>
+          <button id="redoButton" class="secondary-button bilingual-button" type="button"><span class="button-main"><span class="button-symbol" aria-hidden="true">↷</span>重做</span><small class="button-en">Redo</small></button>
+          <button id="clearButton" class="secondary-button danger-text bilingual-button" type="button"><span class="button-main">清除</span><small class="button-en">Clear</small></button>
         </div>
       </div>
 
@@ -88,7 +90,7 @@
 
       <div class="editor-footer">
         <p>送出後將自動產生取件號碼，內容送出後無法修改。</p>
-        <button id="submitButton" class="primary-button" type="button">確認送出</button>
+        <button id="submitButton" class="primary-button bilingual-button" type="button"><span class="button-main">確認送出</span><small class="button-en">Submit</small></button>
       </div>
     </section>
 
@@ -98,7 +100,7 @@
       <h2>您的取件號碼</h2>
       <div id="ticketNumber" class="ticket-number">001</div>
       <p id="printMessage">票券將由出票機自動印出，請妥善保留。</p>
-      <button id="newOrderButton" class="primary-button" type="button">下一位</button>
+      <button id="newOrderButton" class="primary-button bilingual-button" type="button"><span class="button-main">下一位</span><small class="button-en">Next</small></button>
     </section>
   </main>
 
