@@ -366,8 +366,7 @@
         fontId: state.fontId || '',
         strokeWidth: state.strokeWidth,
         png: createOutput(Number(state.config.outputWidth || 2000)),
-        thumbnail: createOutput(600),
-        svg: createSvg()
+        thumbnail: createOutput(600)
       };
       const result = await request('/api/jobs', {
         method: 'POST',
