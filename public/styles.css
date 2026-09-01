@@ -13,6 +13,12 @@ html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; color: var(--ink); font-family: Inter, "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); }
 button, input { font: inherit; }
 button { cursor: pointer; }
+.bilingual-button { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1.05; }
+.button-main { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.button-en { display: block; font-size: 11px; font-weight: 650; line-height: 1.1; letter-spacing: .025em; opacity: .66; }
+.button-symbol { font-family: Arial, sans-serif; font-size: 21px; font-weight: 500; line-height: .8; }
+.text-button.bilingual-button { align-items: flex-start; }
+.mode-card > .button-en { margin-top: 4px; }
 .hidden { display: none !important; }
 .front-body { min-height: 100vh; padding: max(24px, env(safe-area-inset-top)) 18px 40px; background: radial-gradient(circle at 50% 0, #fff 0, #f6f5f2 48%, #eeeeea 100%); }
 .front-shell { width: min(920px, 100%); margin: 0 auto; }
