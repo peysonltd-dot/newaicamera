@@ -119,16 +119,18 @@
 
       const actions = document.createElement('div');
       actions.className = 'job-actions';
-      actions.appendChild(button('PNG', 'mini-button', () => downloadFile(job.id, 'png')));
-      if (job.hasSvg) actions.appendChild(button('SVG', 'mini-button', () => downloadFile(job.id, 'svg')));
-      if (job.status === 'waiting') {
-        actions.appendChild(button('開始製作', 'mini-button dark', () => updateJob(job.id, 'processing')));
-      } else if (job.status === 'processing') {
+      actions.appendChild(button('下載 PNG', 'mini-button dark', () => downloadPng(job)));
+      if (job.status === 'processing') {
         actions.appendChild(button('標記完成', 'mini-button dark', () => updateJob(job.id, 'completed')));
       } else if (job.status === 'completed') {
         actions.appendChild(button('改回製作中', 'mini-button', () => updateJob(job.id, 'processing')));
+      } else if (job.status === 'cancelled') {
+        actions.appendChild(button('恢復等待', 'mini-button', () => updateJob(job.id, 'waiting')));
       }
-      actions.appendChild(button('補印票券', 'mini-button', () => reprint(job.id)));
+      if (job.status !== 'cancelled') {
+        actions.appendChild(button('補印票券', 'mini-button', () => reprint(job.id)));
+        actions.appendChild(button('取消訂單', 'mini-button danger-text', () => cancelJob(job.id)));
+      }
 
       card.append(number, meta, actions);
       list.appendChild(card);
@@ -167,17 +169,39 @@
     } catch (error) { toast(error.message); }
   }
 
-  async function downloadFile(id, type) {
+  async function cancelJob(id) {
+    if (!window.confirm('確定要取消訂單 #' + id + '？取消後資料仍會保留於後台。')) return;
     try {
-      const blob = await api('/api/admin/jobs/' + id + '/file/' + type);
+      await api('/api/admin/jobs/' + id, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      toast('訂單 #' + id + ' 已取消');
+      await loadJobs(true);
+    } catch (error) { toast(error.message); }
+  }
+
+  async function downloadPng(job) {
+    try {
+      const blob = await api('/api/admin/jobs/' + job.id + '/file/png');
+      if (job.status === 'waiting') {
+        await api('/api/admin/jobs/' + job.id, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status: 'processing' })
+        });
+      }
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = id + '.' + type;
+      link.download = job.id + '.png';
       document.body.appendChild(link);
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (job.status === 'waiting') toast('PNG 已下載，狀態已改為製作中');
+      await loadJobs(true);
     } catch (error) { toast(error.message); }
   }
 
