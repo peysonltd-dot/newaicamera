@@ -3,6 +3,7 @@
     config: null,
     mode: null,
     productColor: null,
+    orientation: null,
     strokes: [],
     redo: [],
     drawing: false,
@@ -241,18 +242,29 @@
       button.addEventListener('click', () => {
         state.productColor = color.id;
         renderProductColorChoices();
+        renderOrientationChoices();
         renderModeChoices();
       });
       wrap.appendChild(button);
     });
   }
 
+  function renderOrientationChoices() {
+    const color = state.config.productColors.find((item) => item.id === state.productColor);
+    document.querySelectorAll('.orientation-card').forEach((button) => {
+      button.disabled = !color;
+      button.classList.toggle('active', button.dataset.orientation === state.orientation);
+      button.setAttribute('aria-pressed', button.dataset.orientation === state.orientation ? 'true' : 'false');
+      button.style.setProperty('--tag-color', color?.swatch || '#c48c62');
+    });
+  }
+
   function renderModeChoices() {
     document.querySelectorAll('.mode-card').forEach((button) => {
       button.classList.toggle('hidden', !state.config.modes.includes(button.dataset.mode));
-      button.disabled = !state.productColor;
+      button.disabled = !state.productColor || !state.orientation;
     });
-    if (state.productColor && state.config.modes.length === 1) selectMode(state.config.modes[0]);
+    if (state.productColor && state.orientation && state.config.modes.length === 1) selectMode(state.config.modes[0]);
   }
 
   function renderWidths() {
@@ -318,6 +330,7 @@
 
   function selectMode(mode) {
     if (!state.productColor) return showToast('請先選擇證件套顏色');
+    if (!state.orientation) return showToast('請先選擇直式或橫式');
     state.mode = mode;
     state.strokes = [];
     state.redo = [];
@@ -339,11 +352,15 @@
     state.mode = null;
     state.strokes = [];
     state.redo = [];
-    if (clearProductColor) state.productColor = null;
+    if (clearProductColor) {
+      state.productColor = null;
+      state.orientation = null;
+    }
     $('#editorStep').classList.add('hidden');
     $('#successStep').classList.add('hidden');
     $('#modeStep').classList.remove('hidden');
     renderProductColorChoices();
+    renderOrientationChoices();
     renderModeChoices();
   }
 
@@ -409,6 +426,7 @@
       const body = {
         mode: state.mode,
         productColor: state.productColor,
+        orientation: state.orientation,
         text: state.mode === 'typing' ? $('#textInput').value.trim() : '',
         fontId: state.fontId || '',
         strokeWidth: state.strokeWidth,
@@ -445,6 +463,7 @@
       $('#eventSubtitle').textContent = state.config.eventSubtitle;
       $('#textInput').maxLength = Number(state.config.maxChars);
       renderProductColorChoices();
+      renderOrientationChoices();
       renderModeChoices();
       loadFonts(state.config.fonts).then(() => {
         renderFontChoices();
@@ -457,6 +476,15 @@
       showToast('系統載入失敗：' + error.message);
     }
   }
+
+  document.querySelectorAll('.orientation-card').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!state.productColor) return showToast('請先選擇證件套顏色');
+      state.orientation = button.dataset.orientation;
+      renderOrientationChoices();
+      renderModeChoices();
+    });
+  });
 
   document.querySelectorAll('.mode-card').forEach((button) => {
     button.addEventListener('click', () => selectMode(button.dataset.mode));
