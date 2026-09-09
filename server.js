@@ -62,7 +62,8 @@ function defaultStore() {
         { id: 'yellow', name: '黃', en: 'Yellow', swatch: '#d99a00', image: '/assets/passholder-yellow.webp' },
         { id: 'green', name: '綠', en: 'Green', swatch: '#a5cdcf', image: '/assets/passholder-green.webp' },
         { id: 'blue', name: '藍', en: 'Blue', swatch: '#6da2c7', image: '/assets/passholder-blue.webp' },
-        { id: 'purple', name: '紫', en: 'Purple', swatch: '#918aba', image: '/assets/passholder-purple.webp' }
+        { id: 'purple', name: '紫', en: 'Purple', swatch: '#918aba', image: '/assets/passholder-purple.webp' },
+        { id: 'brown', name: '褐', en: 'Brown', swatch: '#b95f35', image: '/assets/passholder-brown.webp' }
       ],
       productOrientations: [
         { id: 'vertical', name: '直式', en: 'Vertical', canvasRatio: 1.55 },
