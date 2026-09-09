@@ -30,11 +30,16 @@ button { cursor: pointer; }
 .panel { background: rgba(255,255,255,.93); border: 1px solid rgba(35,32,28,.1); border-radius: 28px; box-shadow: var(--shadow); padding: clamp(22px, 4vw, 40px); }
 .step-kicker { color: #8e8981; letter-spacing: .14em; font-weight: 800; font-size: 11px; }
 .panel h2 { margin: 8px 0 24px; font-size: 26px; letter-spacing: -.02em; }
-.handedness-section { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--line); text-align: center; }
-.handedness-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 520px; margin: 0 auto; }
-.handedness-button { border: 1px solid var(--line); background: #f7f6f3; color: var(--ink); border-radius: 14px; padding: 16px 20px; font-size: 18px; font-weight: 800; transition: .18s ease; }
-.handedness-button:hover { border-color: #222; background: #fff; }
-.handedness-button.active { border-color: #151515; background: #151515; color: #fff; box-shadow: 0 8px 24px rgba(20,20,20,.16); }
+.product-section { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--line); text-align: center; }
+.section-en { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .03em; }
+.color-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0 auto; }
+.color-choice { min-height: 132px; border: 1px solid var(--line); background: #faf9f7; color: var(--ink); border-radius: 16px; padding: 14px 10px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: .18s ease; }
+.color-choice:hover { border-color: #777; background: #fff; }
+.color-choice.active { border: 2px solid #151515; background: #fff; box-shadow: 0 8px 24px rgba(20,20,20,.13); }
+.color-choice img { width: 100%; height: 78px; object-fit: contain; border-radius: 10px; }
+.color-swatch { width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); box-shadow: inset 0 0 0 3px rgba(255,255,255,.28); }
+.color-choice strong { margin-top: 3px; font-size: 17px; }
+.color-choice small { color: var(--muted); font-size: 11px; }
 .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
 .mode-card { min-height: 210px; border: 1px solid var(--line); background: #fbfbfa; border-radius: 22px; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: .18s ease; color: var(--ink); }
 .mode-card:hover, .mode-card:active { transform: translateY(-2px); border-color: #222; background: #fff; box-shadow: 0 13px 36px rgba(20,20,20,.08); }
@@ -127,6 +132,9 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
 .setting-card label, .setting-label { display: block; font-size: 13px; font-weight: 700; margin: 13px 0 6px; }
 .setting-card label input:not([type=checkbox]) { margin-top: 7px; }
 .setting-card p { color: var(--muted); font-size: 13px; }
+.danger-card { border-color: #e6c8c5; background: #fffafa; }
+.danger-button { border: 1px solid #b84a42; background: #b84a42; color: #fff; border-radius: 11px; padding: 11px 16px; font-weight: 750; }
+.danger-button:hover { background: #9f3e37; border-color: #9f3e37; }
 .setting-card .check-row { display: flex; align-items: center; gap: 9px; font-weight: 500; }
 .setting-card .check-row input { width: auto; }
 .setting-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
@@ -156,6 +164,9 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
   .front-body { padding-left: 12px; padding-right: 12px; }
   .brand-header { padding: 20px 0; }
   .panel { border-radius: 20px; padding: 20px 16px; }
+  .color-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .color-choice { min-height: 112px; }
+  .color-swatch { width: 54px; height: 54px; }
   .mode-grid { grid-template-columns: 1fr; }
   .mode-card { min-height: 150px; }
   .tool-row, .editor-footer { align-items: stretch; flex-direction: column; }
