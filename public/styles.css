@@ -32,8 +32,9 @@ button { cursor: pointer; }
 .panel h2 { margin: 8px 0 24px; font-size: 26px; letter-spacing: -.02em; }
 .product-section { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--line); text-align: center; }
 .section-en { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .03em; }
-.color-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0 auto; }
-.color-choice { min-height: 132px; border: 1px solid var(--line); background: #faf9f7; color: var(--ink); border-radius: 16px; padding: 14px 10px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: .18s ease; }
+.color-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; width: 100%; max-width: 840px; margin: 0 auto; }
+.color-choice { grid-column: span 2; min-height: 132px; border: 1px solid var(--line); background: #faf9f7; color: var(--ink); border-radius: 16px; padding: 14px 10px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: .18s ease; }
+.color-choice:nth-last-child(2):nth-child(3n + 1) { grid-column: 2 / span 2; }
 .color-choice:hover { border-color: #777; background: #fff; }
 .color-choice.active { border: 2px solid #151515; background: #fff; box-shadow: 0 8px 24px rgba(20,20,20,.13); }
 .color-choice img { width: 100%; height: 78px; object-fit: contain; border-radius: 10px; }
@@ -164,8 +165,10 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
   .front-body { padding-left: 12px; padding-right: 12px; }
   .brand-header { padding: 20px 0; }
   .panel { border-radius: 20px; padding: 20px 16px; }
-  .color-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .color-choice { min-height: 112px; }
+  .color-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: none; gap: 10px; }
+  .color-choice { grid-column: span 2; min-height: 112px; }
+  .color-choice:nth-last-child(2):nth-child(3n + 1) { grid-column: span 2; }
+  .color-choice:last-child:nth-child(odd) { grid-column: 2 / span 2; }
   .color-swatch { width: 54px; height: 54px; }
   .mode-grid { grid-template-columns: 1fr; }
   .mode-card { min-height: 150px; }
