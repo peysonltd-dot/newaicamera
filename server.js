@@ -65,8 +65,8 @@ function defaultStore() {
         { id: 'purple', name: '紫', en: 'Purple', swatch: '#918aba', image: '/assets/passholder-purple.webp' }
       ],
       productOrientations: [
-        { id: 'vertical', name: '直式', en: 'Vertical' },
-        { id: 'horizontal', name: '橫式', en: 'Horizontal' }
+        { id: 'vertical', name: '直式', en: 'Vertical', canvasRatio: 1.55 },
+        { id: 'horizontal', name: '橫式', en: 'Horizontal', canvasRatio: 2.85 }
       ],
       maxChars: 20,
       canvasRatio: 5,
@@ -104,9 +104,11 @@ function loadStore() {
       ...(savedColors.find((color) => color.id === defaultColor.id) || {}),
       ...defaultColor
     }));
-    const productOrientations = Array.isArray(savedConfig.productOrientations) && savedConfig.productOrientations.length
-      ? savedConfig.productOrientations
-      : defaults.config.productOrientations;
+    const savedOrientations = Array.isArray(savedConfig.productOrientations) ? savedConfig.productOrientations : [];
+    const productOrientations = defaults.config.productOrientations.map((defaultOrientation) => ({
+      ...(savedOrientations.find((item) => item.id === defaultOrientation.id) || {}),
+      ...defaultOrientation
+    }));
     return {
       config: { ...defaults.config, ...savedConfig, fonts, productColors, productOrientations },
       counter: Number(parsed.counter || 0),
