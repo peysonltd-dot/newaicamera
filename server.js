@@ -59,10 +59,14 @@ function defaultStore() {
       eventSubtitle: '選擇顏色・手寫簽名・專屬文字',
       modes: ['handwriting', 'typing'],
       productColors: [
-        { id: 'yellow', name: '黃', en: 'Yellow', swatch: '#d5ad3d' },
-        { id: 'green', name: '綠', en: 'Green', swatch: '#547260' },
-        { id: 'blue', name: '藍', en: 'Blue', swatch: '#4f6f91' },
-        { id: 'purple', name: '紫', en: 'Purple', swatch: '#75627f' }
+        { id: 'yellow', name: '黃', en: 'Yellow', swatch: '#d99a00', image: '/assets/passholder-yellow.webp' },
+        { id: 'green', name: '綠', en: 'Green', swatch: '#a5cdcf', image: '/assets/passholder-green.webp' },
+        { id: 'blue', name: '藍', en: 'Blue', swatch: '#6da2c7', image: '/assets/passholder-blue.webp' },
+        { id: 'purple', name: '紫', en: 'Purple', swatch: '#918aba', image: '/assets/passholder-purple.webp' }
+      ],
+      productOrientations: [
+        { id: 'vertical', name: '直式', en: 'Vertical' },
+        { id: 'horizontal', name: '橫式', en: 'Horizontal' }
       ],
       maxChars: 20,
       canvasRatio: 5,
@@ -95,11 +99,16 @@ function loadStore() {
     const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : [];
     const builtInIds = new Set(defaults.config.fonts.map((font) => font.id));
     const fonts = defaults.config.fonts.concat(savedFonts.filter((font) => !builtInIds.has(font.id)));
-    const productColors = Array.isArray(savedConfig.productColors) && savedConfig.productColors.length
-      ? savedConfig.productColors
-      : defaults.config.productColors;
+    const savedColors = Array.isArray(savedConfig.productColors) ? savedConfig.productColors : [];
+    const productColors = defaults.config.productColors.map((defaultColor) => ({
+      ...(savedColors.find((color) => color.id === defaultColor.id) || {}),
+      ...defaultColor
+    }));
+    const productOrientations = Array.isArray(savedConfig.productOrientations) && savedConfig.productOrientations.length
+      ? savedConfig.productOrientations
+      : defaults.config.productOrientations;
     return {
-      config: { ...defaults.config, ...savedConfig, fonts, productColors },
+      config: { ...defaults.config, ...savedConfig, fonts, productColors, productOrientations },
       counter: Number(parsed.counter || 0),
       jobs: Array.isArray(parsed.jobs) ? parsed.jobs : []
     };
@@ -177,6 +186,7 @@ function ticketContent(job) {
     '<CB>------------------------</CB><BR>',
     '<C>' + safeText(config.ticketMessage, 60) + '</C><BR>',
     '<C>證件套顏色：' + safeText(job.productColorName || job.productColor, 12) + '</C><BR>',
+    '<C>雷雕方向：' + safeText(job.orientationName || job.orientation, 12) + '</C><BR>',
     '<C>' + (job.mode === 'handwriting' ? '手寫簽名' : '文字雷雕') + '</C><BR>',
     '<C>' + new Date(job.createdAt).toLocaleString('zh-TW', { hour12: false }) + '</C><BR><BR>'
   ].join('');
@@ -267,6 +277,11 @@ app.post('/api/jobs', (req, res) => {
   if (!selectedColor) {
     return res.status(400).json({ success: false, error: '請選擇證件套顏色' });
   }
+  const orientation = safeText(req.body?.orientation, 20);
+  const selectedOrientation = store.config.productOrientations.find((item) => item.id === orientation);
+  if (!selectedOrientation) {
+    return res.status(400).json({ success: false, error: '請選擇直式或橫式' });
+  }
   if (!validateDataUrl(req.body?.png)) {
     return res.status(400).json({ success: false, error: '圖檔格式錯誤或檔案過大' });
   }
@@ -283,6 +298,8 @@ app.post('/api/jobs', (req, res) => {
     mode,
     productColor: selectedColor.id,
     productColorName: selectedColor.name,
+    orientation: selectedOrientation.id,
+    orientationName: selectedOrientation.name,
     text,
     fontId: safeText(req.body?.fontId, 60),
     strokeWidth: Number(req.body?.strokeWidth || 0),
