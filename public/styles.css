@@ -180,3 +180,119 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
   .queue-toolbar { flex-direction: column; }
   .compact-input { max-width: none; }
 }
+
+/* Leather tag color and orientation selection */
+.color-choice { min-height: 196px; padding-top: 10px; }
+.color-choice img { height: 132px; object-fit: contain; background: #fff; }
+
+.orientation-section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.orientation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+.orientation-card {
+  min-height: 226px;
+  padding: 20px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #faf9f7;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  transition: .18s ease;
+}
+.orientation-card:not(:disabled):hover { border-color: #777; background: #fff; }
+.orientation-card.active {
+  border: 2px solid #151515;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(20,20,20,.13);
+}
+.orientation-card:disabled { opacity: .46; cursor: not-allowed; }
+.orientation-card > strong { margin-top: 10px; font-size: 18px; }
+.orientation-card > small { color: var(--muted); font-size: 11px; }
+.orientation-demo {
+  --tag-color: #c48c62;
+  position: relative;
+  display: block;
+  background: var(--tag-color);
+  border: 1px solid rgba(30,30,30,.2);
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.16), 0 5px 14px rgba(0,0,0,.09);
+}
+.orientation-vertical {
+  width: 92px;
+  height: 126px;
+  border-radius: 45px 45px 12px 12px;
+}
+.orientation-horizontal {
+  width: 150px;
+  height: 92px;
+  border-radius: 45px 12px 12px 45px;
+}
+.tag-nub {
+  position: absolute;
+  display: block;
+  background: var(--tag-color);
+  border: 1px solid rgba(30,30,30,.18);
+  box-shadow: 0 2px 4px rgba(0,0,0,.12);
+}
+.orientation-vertical .tag-nub {
+  width: 19px;
+  height: 26px;
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+}
+.orientation-horizontal .tag-nub {
+  width: 26px;
+  height: 19px;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 4px;
+}
+.custom-zone {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(20,20,20,.62);
+  border-radius: 6px;
+  color: #161616;
+  background: rgba(255,255,255,.24);
+  line-height: 1.1;
+}
+.custom-zone b { font-size: 10px; }
+.custom-zone small { margin-top: 2px; font-size: 6px; white-space: nowrap; }
+.logo-zone {
+  position: absolute;
+  color: #111;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.orientation-vertical .custom-zone { left: 12px; right: 12px; top: 42px; height: 43px; }
+.orientation-vertical .logo-zone { left: 0; right: 0; bottom: 13px; }
+.orientation-horizontal .custom-zone { left: 37px; right: 13px; top: 17px; height: 34px; }
+.orientation-horizontal .logo-zone { left: 35px; right: 8px; bottom: 13px; }
+
+@media (max-width: 640px) {
+  .color-choice { min-height: 166px; }
+  .color-choice img { height: 106px; }
+  .orientation-grid { gap: 10px; }
+  .orientation-card { min-height: 205px; padding-left: 8px; padding-right: 8px; }
+  .orientation-horizontal { width: 132px; height: 82px; }
+}
