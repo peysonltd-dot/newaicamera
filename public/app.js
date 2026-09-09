@@ -2,7 +2,7 @@
   const state = {
     config: null,
     mode: null,
-    handedness: null,
+    productColor: null,
     strokes: [],
     redo: [],
     drawing: false,
@@ -37,14 +37,28 @@
     return state.config.fonts.find((font) => font.id === state.fontId) || state.config.fonts[0];
   }
 
+  async function ensureFontLoaded(font) {
+    const source = font?.data || font?.url;
+    if (!source || state.fontsLoaded.has(font.id)) return;
+    const loading = (async () => {
+      const face = new FontFace(font.family, 'url("' + source + '")');
+      await face.load();
+      document.fonts.add(face);
+      return face;
+    })();
+    state.fontsLoaded.set(font.id, loading);
+    try {
+      await loading;
+    } catch (error) {
+      state.fontsLoaded.delete(font.id);
+      throw error;
+    }
+  }
+
   async function loadFonts(fonts) {
     for (const font of fonts) {
-      if (!font.data || state.fontsLoaded.has(font.id)) continue;
       try {
-        const face = new FontFace(font.family, 'url(' + font.data + ')');
-        await face.load();
-        document.fonts.add(face);
-        state.fontsLoaded.set(font.id, face);
+        await ensureFontLoaded(font);
       } catch (error) {
         console.warn('Font load failed:', font.name, error);
       }
@@ -198,20 +212,47 @@
     $('#submitButton').disabled = !hasContent || state.submitting;
   }
 
-  function renderHandednessChoices() {
-    document.querySelectorAll('.handedness-button').forEach((button) => {
-      const selected = button.dataset.handedness === state.handedness;
-      button.classList.toggle('active', selected);
-      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  function renderProductColorChoices() {
+    const wrap = $('#productColorChoices');
+    wrap.innerHTML = '';
+    state.config.productColors.forEach((color) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '');
+      button.setAttribute('aria-pressed', color.id === state.productColor ? 'true' : 'false');
+
+      if (color.image) {
+        const image = document.createElement('img');
+        image.src = color.image;
+        image.alt = color.name + '色證件套';
+        button.appendChild(image);
+      } else {
+        const swatch = document.createElement('span');
+        swatch.className = 'color-swatch';
+        swatch.style.background = color.swatch;
+        button.appendChild(swatch);
+      }
+
+      const label = document.createElement('strong');
+      label.textContent = color.name;
+      const english = document.createElement('small');
+      english.textContent = color.en;
+      button.append(label, english);
+      button.addEventListener('click', () => {
+        state.productColor = color.id;
+        renderProductColorChoices();
+        renderModeChoices();
+      });
+      wrap.appendChild(button);
     });
   }
 
   function renderModeChoices() {
     document.querySelectorAll('.mode-card').forEach((button) => {
       button.classList.toggle('hidden', !state.config.modes.includes(button.dataset.mode));
-      button.disabled = !state.handedness;
+      button.disabled = !state.productColor;
     });
-    if (state.handedness && state.config.modes.length === 1) selectMode(state.config.modes[0]);
+    if (state.productColor && state.config.modes.length === 1) selectMode(state.config.modes[0]);
   }
 
   function renderWidths() {
@@ -260,17 +301,23 @@
       const name = document.createElement('small');
       name.textContent = font.name;
       button.append(preview, name);
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         state.fontId = font.id;
         renderFontChoices();
-        redraw();
+        try {
+          if ((font.data || font.url) && !state.fontsLoaded.has(font.id)) showToast('字體載入中…');
+          await ensureFontLoaded(font);
+          redraw();
+        } catch (error) {
+          showToast('字體載入失敗，請檢查網路後重試');
+        }
       });
       wrap.appendChild(button);
     });
   }
 
   function selectMode(mode) {
-    if (!state.handedness) return showToast('請先選擇左撇子或右撇子');
+    if (!state.productColor) return showToast('請先選擇證件套顏色');
     state.mode = mode;
     state.strokes = [];
     state.redo = [];
@@ -288,15 +335,15 @@
     requestAnimationFrame(configureCanvas);
   }
 
-  function resetToMode(clearHandedness = false) {
+  function resetToMode(clearProductColor = false) {
     state.mode = null;
     state.strokes = [];
     state.redo = [];
-    if (clearHandedness) state.handedness = null;
+    if (clearProductColor) state.productColor = null;
     $('#editorStep').classList.add('hidden');
     $('#successStep').classList.add('hidden');
     $('#modeStep').classList.remove('hidden');
-    renderHandednessChoices();
+    renderProductColorChoices();
     renderModeChoices();
   }
 
@@ -361,7 +408,7 @@
     try {
       const body = {
         mode: state.mode,
-        handedness: state.handedness,
+        productColor: state.productColor,
         text: state.mode === 'typing' ? $('#textInput').value.trim() : '',
         fontId: state.fontId || '',
         strokeWidth: state.strokeWidth,
@@ -397,9 +444,12 @@
       $('#eventName').textContent = state.config.eventName;
       $('#eventSubtitle').textContent = state.config.eventSubtitle;
       $('#textInput').maxLength = Number(state.config.maxChars);
-      await loadFonts(state.config.fonts);
-      renderHandednessChoices();
+      renderProductColorChoices();
       renderModeChoices();
+      loadFonts(state.config.fonts).then(() => {
+        renderFontChoices();
+        redraw();
+      });
       renderWidths();
       renderFontChoices();
       configureCanvas();
@@ -408,13 +458,6 @@
     }
   }
 
-  document.querySelectorAll('.handedness-button').forEach((button) => {
-    button.addEventListener('click', () => {
-      state.handedness = button.dataset.handedness;
-      renderHandednessChoices();
-      renderModeChoices();
-    });
-  });
   document.querySelectorAll('.mode-card').forEach((button) => {
     button.addEventListener('click', () => selectMode(button.dataset.mode));
   });
