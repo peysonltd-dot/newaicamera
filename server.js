@@ -23,12 +23,13 @@ app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] })
 
 function builtInFonts() {
   return [
-    { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', builtIn: true },
-    { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', builtIn: true },
+    { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', weight: 700, builtIn: true },
+    { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', weight: 400, builtIn: true },
     {
       id: 'chenyu-luoyan',
       name: '辰宇落雁體',
       family: 'Peyson_Chenyu_Luoyan',
+      weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin@main/ChenYuluoyan-2.0-Thin.ttf',
       builtIn: true
     },
@@ -36,6 +37,7 @@ function builtInFonts() {
       id: 'iansui',
       name: '芫荽體',
       family: 'Peyson_Iansui',
+      weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@main/fonts/ttf/Iansui-Regular.ttf',
       builtIn: true
     },
@@ -43,6 +45,7 @@ function builtInFonts() {
       id: 'jason-handwriting-5',
       name: '清松手寫體 5',
       family: 'Peyson_Jason_Handwriting_5',
+      weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/jasonhandwriting/JasonHandwriting@master/JasonHandwriting5.ttf',
       builtIn: true
     }
