@@ -63,7 +63,8 @@
       const passSearch = !keyword ||
         job.id.toLowerCase().includes(keyword) ||
         String(job.text || '').toLowerCase().includes(keyword) ||
-        String(job.productColorName || '').toLowerCase().includes(keyword);
+        String(job.productColorName || '').toLowerCase().includes(keyword) ||
+        String(job.orientationName || '').toLowerCase().includes(keyword);
       return passFilter && passSearch;
     });
   }
@@ -106,7 +107,8 @@
       if (job.mode === 'typing' && job.fontId) title.title = '字體：' + job.fontId;
       const line1 = document.createElement('small');
       const productColor = job.productColorName ? job.productColorName + '色證件套' : '未標示顏色';
-      line1.textContent = productColor + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
+      const orientation = job.orientationName ? job.orientationName + '雷雕' : '未標示方向';
+      line1.textContent = productColor + '・' + orientation + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
       const line2 = document.createElement('small');
       line2.textContent = printName(job);
       if (job.printStatus === 'failed') line2.className = 'print-failed';
