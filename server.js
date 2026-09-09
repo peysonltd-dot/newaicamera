@@ -119,7 +119,14 @@ function saveStore() {
 }
 
 function publicConfig() {
-  return store.config;
+  return {
+    ...store.config,
+    fonts: store.config.fonts.map(({ data, ...font }) => (
+      data
+        ? { ...font, url: '/api/fonts/' + encodeURIComponent(font.id) }
+        : font
+    ))
+  };
 }
 
 function nowIso() {
@@ -233,7 +240,20 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/api/fonts/:id', (req, res) => {
+  const font = store.config.fonts.find((item) => item.id === req.params.id);
+  if (!font?.data) return res.status(404).send('Font not found');
+
+  const match = /^data:([^;,]+)(?:;[^,]*)?;base64,(.+)$/s.exec(font.data);
+  if (!match) return res.status(422).send('Invalid font data');
+
+  res.set('Content-Type', font.mime || match[1] || 'application/octet-stream');
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(Buffer.from(match[2], 'base64'));
+});
+
 app.get('/api/config', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.json({ success: true, config: publicConfig() });
 });
 
