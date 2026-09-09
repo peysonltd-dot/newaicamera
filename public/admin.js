@@ -60,7 +60,10 @@
     const keyword = $('#jobSearch').value.trim().toLowerCase();
     return state.jobs.filter((job) => {
       const passFilter = state.filter === 'all' || job.status === state.filter;
-      const passSearch = !keyword || job.id.toLowerCase().includes(keyword) || String(job.text || '').toLowerCase().includes(keyword);
+      const passSearch = !keyword ||
+        job.id.toLowerCase().includes(keyword) ||
+        String(job.text || '').toLowerCase().includes(keyword) ||
+        String(job.productColorName || '').toLowerCase().includes(keyword);
       return passFilter && passSearch;
     });
   }
@@ -102,8 +105,8 @@
       title.textContent = job.mode === 'handwriting' ? '手寫簽名' : (job.text || '文字雷雕');
       if (job.mode === 'typing' && job.fontId) title.title = '字體：' + job.fontId;
       const line1 = document.createElement('small');
-      const handedness = job.handedness === 'left' ? '左撇子' : (job.handedness === 'right' ? '右撇子' : '未標示');
-      line1.textContent = handedness + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
+      const productColor = job.productColorName ? job.productColorName + '色證件套' : '未標示顏色';
+      line1.textContent = productColor + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
       const line2 = document.createElement('small');
       line2.textContent = printName(job);
       if (job.printStatus === 'failed') line2.className = 'print-failed';
@@ -207,13 +210,18 @@
 
   async function registerFonts(fonts) {
     for (const font of fonts) {
-      if (!font.data || state.fontFaces.has(font.id)) continue;
+      const source = font.data || font.url;
+      if (!source || state.fontFaces.has(font.id)) continue;
       try {
-        const face = new FontFace(font.family, 'url(' + font.data + ')');
-        await face.load();
+        const face = new FontFace(font.family, 'url("' + source + '")');
+        const loading = face.load();
+        state.fontFaces.set(font.id, loading);
+        await loading;
         document.fonts.add(face);
-        state.fontFaces.set(font.id, face);
-      } catch (error) { console.warn(error); }
+      } catch (error) {
+        state.fontFaces.delete(font.id);
+        console.warn(error);
+      }
     }
   }
 
@@ -260,9 +268,9 @@
       const result = await api('/api/admin/config');
       state.config = result.config;
       $('#printerStatusText').textContent = result.printerConfigured ? '已完成環境設定' : '尚未設定出票機';
-      await registerFonts(state.config.fonts);
       fillSettings();
       renderAdminFonts();
+      registerFonts(state.config.fonts).then(renderAdminFonts);
     } catch (error) { toast(error.message); }
   }
 
@@ -307,6 +315,27 @@
       });
       state.counter = result.counter;
       toast('流水號已更新');
+    } catch (error) { toast(error.message); }
+  }
+
+  async function resetEvent() {
+    const count = state.jobs.length;
+    if (!confirm('確定重製活動？目前 ' + count + ' 筆訂單將全部刪除，流水號歸零。字體與其他設定會保留。')) return;
+    const confirmation = prompt('此操作無法復原。請輸入「重製」確認：');
+    if (confirmation !== '重製') return toast('確認文字不正確，未執行重製');
+    try {
+      const result = await api('/api/admin/reset-event', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirmation })
+      });
+      state.filter = 'all';
+      $('#jobSearch').value = '';
+      document.querySelectorAll('.filter-button').forEach((button) => {
+        button.classList.toggle('active', button.dataset.filter === 'all');
+      });
+      await loadJobs(true);
+      toast('活動已重製：刪除 ' + result.clearedJobs + ' 筆訂單，流水號已歸零');
     } catch (error) { toast(error.message); }
   }
 
@@ -396,6 +425,7 @@
   $('#jobSearch').addEventListener('input', renderJobs);
   $('#settingsForm').addEventListener('submit', saveSettings);
   $('#resetCounterButton').addEventListener('click', resetCounter);
+  $('#resetEventButton').addEventListener('click', resetEvent);
   $('#fontUploadForm').addEventListener('submit', uploadFont);
   $('#printerStatusButton').addEventListener('click', printerStatus);
 
