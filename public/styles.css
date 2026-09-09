@@ -73,7 +73,7 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
 .font-choice small { color: var(--muted); }
 .canvas-label-row { display: flex; justify-content: space-between; margin: 14px 2px 8px; }
 .canvas-label-row small { color: #9a958e; font-weight: 400; }
-.canvas-stage { position: relative; width: 100%; aspect-ratio: var(--canvas-ratio, 5) / 1; min-height: 150px; max-height: 310px; border: 1px dashed #aaa49b; border-radius: 14px; overflow: hidden; background-color: #fff; background-image: linear-gradient(45deg,#f5f5f2 25%,transparent 25%),linear-gradient(-45deg,#f5f5f2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f5f5f2 75%),linear-gradient(-45deg,transparent 75%,#f5f5f2 75%); background-size: 24px 24px; background-position: 0 0,0 12px,12px -12px,-12px 0; }
+.canvas-stage { position: relative; width: 100%; aspect-ratio: var(--canvas-ratio, 5) / 1; min-height: 150px; max-width: var(--canvas-max-width, 100%); margin-inline: auto; border: 1px dashed #aaa49b; border-radius: 14px; overflow: hidden; background-color: #fff; background-image: linear-gradient(45deg,#f5f5f2 25%,transparent 25%),linear-gradient(-45deg,#f5f5f2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f5f5f2 75%),linear-gradient(-45deg,transparent 75%,#f5f5f2 75%); background-size: 24px 24px; background-position: 0 0,0 12px,12px -12px,-12px 0; }
 .canvas-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; z-index: 2; }
 .canvas-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #9b968f; text-align: center; pointer-events: none; z-index: 1; }
 .canvas-empty span { font-size: 12px; margin-top: 6px; }
@@ -286,7 +286,7 @@ input:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30,30,.06); }
 }
 .orientation-vertical .custom-zone { left: 12px; right: 12px; top: 42px; height: 43px; }
 .orientation-vertical .logo-zone { left: 0; right: 0; bottom: 13px; }
-.orientation-horizontal .custom-zone { left: 37px; right: 13px; top: 17px; height: 34px; }
+.orientation-horizontal .custom-zone { left: 37px; right: 13px; top: 23px; height: 34px; }
 .orientation-horizontal .logo-zone { left: 35px; right: 8px; bottom: 13px; }
 
 @media (max-width: 640px) {
