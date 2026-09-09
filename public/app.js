@@ -127,7 +127,7 @@
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     while (size > 10) {
-      context.font = '700 ' + size + 'px ' + family;
+      context.font = String(font?.weight || 700) + ' ' + size + 'px ' + family;
       if (context.measureText(text).width <= width * .9) break;
       size -= Math.max(1, height * .015);
     }
