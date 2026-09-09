@@ -21,12 +21,46 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
+function builtInFonts() {
+  return [
+    { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', builtIn: true },
+    { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', builtIn: true },
+    {
+      id: 'chenyu-luoyan',
+      name: '辰宇落雁體',
+      family: 'Peyson_Chenyu_Luoyan',
+      url: 'https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin@main/ChenYuluoyan-2.0-Thin.ttf',
+      builtIn: true
+    },
+    {
+      id: 'iansui',
+      name: '芫荽體',
+      family: 'Peyson_Iansui',
+      url: 'https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@main/fonts/ttf/Iansui-Regular.ttf',
+      builtIn: true
+    },
+    {
+      id: 'jason-handwriting-5',
+      name: '清松手寫體 5',
+      family: 'Peyson_Jason_Handwriting_5',
+      url: 'https://cdn.jsdelivr.net/gh/jasonhandwriting/JasonHandwriting@master/JasonHandwriting5.ttf',
+      builtIn: true
+    }
+  ];
+}
+
 function defaultStore() {
   return {
     config: {
-      eventName: '現場雷雕體驗',
-      eventSubtitle: '手寫簽名・專屬文字',
+      eventName: '皮革證件套雷雕體驗',
+      eventSubtitle: '選擇顏色・手寫簽名・專屬文字',
       modes: ['handwriting', 'typing'],
+      productColors: [
+        { id: 'yellow', name: '黃', en: 'Yellow', swatch: '#d5ad3d' },
+        { id: 'green', name: '綠', en: 'Green', swatch: '#547260' },
+        { id: 'blue', name: '藍', en: 'Blue', swatch: '#4f6f91' },
+        { id: 'purple', name: '紫', en: 'Purple', swatch: '#75627f' }
+      ],
       maxChars: 20,
       canvasRatio: 5,
       outputWidth: 2000,
@@ -35,10 +69,7 @@ function defaultStore() {
       ticketPrefix: '',
       autoPrint: true,
       ticketMessage: '請保留票券，憑號取件',
-      fonts: [
-        { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', builtIn: true },
-        { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', builtIn: true }
-      ]
+      fonts: builtInFonts()
     },
     counter: 0,
     jobs: []
@@ -57,8 +88,15 @@ function loadStore() {
   try {
     const parsed = JSON.parse(fs.readFileSync(STORE_FILE, 'utf8'));
     const defaults = defaultStore();
+    const savedConfig = parsed.config || {};
+    const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : [];
+    const builtInIds = new Set(defaults.config.fonts.map((font) => font.id));
+    const fonts = defaults.config.fonts.concat(savedFonts.filter((font) => !builtInIds.has(font.id)));
+    const productColors = Array.isArray(savedConfig.productColors) && savedConfig.productColors.length
+      ? savedConfig.productColors
+      : defaults.config.productColors;
     return {
-      config: Object.assign({}, defaults.config, parsed.config || {}),
+      config: { ...defaults.config, ...savedConfig, fonts, productColors },
       counter: Number(parsed.counter || 0),
       jobs: Array.isArray(parsed.jobs) ? parsed.jobs : []
     };
@@ -128,6 +166,7 @@ function ticketContent(job) {
     '<CB><BOLD>' + number + '</BOLD></CB><BR>',
     '<CB>------------------------</CB><BR>',
     '<C>' + safeText(config.ticketMessage, 60) + '</C><BR>',
+    '<C>證件套顏色：' + safeText(job.productColorName || job.productColor, 12) + '</C><BR>',
     '<C>' + (job.mode === 'handwriting' ? '手寫簽名' : '文字雷雕') + '</C><BR>',
     '<C>' + new Date(job.createdAt).toLocaleString('zh-TW', { hour12: false }) + '</C><BR><BR>'
   ].join('');
@@ -200,9 +239,10 @@ app.post('/api/jobs', (req, res) => {
   if (!store.config.modes.includes(mode)) {
     return res.status(400).json({ success: false, error: '此輸入模式目前未開放' });
   }
-  const handedness = ['left', 'right'].includes(req.body?.handedness) ? req.body.handedness : '';
-  if (!handedness) {
-    return res.status(400).json({ success: false, error: '請選擇左撇子或右撇子' });
+  const productColor = safeText(req.body?.productColor, 20);
+  const selectedColor = store.config.productColors.find((color) => color.id === productColor);
+  if (!selectedColor) {
+    return res.status(400).json({ success: false, error: '請選擇證件套顏色' });
   }
   if (!validateDataUrl(req.body?.png)) {
     return res.status(400).json({ success: false, error: '圖檔格式錯誤或檔案過大' });
@@ -218,13 +258,13 @@ app.post('/api/jobs', (req, res) => {
   const job = {
     id,
     mode,
-    handedness,
+    productColor: selectedColor.id,
+    productColorName: selectedColor.name,
     text,
     fontId: safeText(req.body?.fontId, 60),
     strokeWidth: Number(req.body?.strokeWidth || 0),
     png: req.body.png,
     thumbnail: validateDataUrl(req.body?.thumbnail) ? req.body.thumbnail : '',
-    svg: typeof req.body?.svg === 'string' && req.body.svg.length < 5 * 1024 * 1024 ? req.body.svg : '',
     status: 'waiting',
     printStatus: store.config.autoPrint ? 'queued' : 'not_requested',
     printError: '',
@@ -375,6 +415,17 @@ app.post('/api/admin/reset-counter', requireAdmin, (req, res) => {
   store.counter = next;
   saveStore();
   res.json({ success: true, counter: store.counter });
+});
+
+app.post('/api/admin/reset-event', requireAdmin, (req, res) => {
+  if (req.body?.confirmation !== '重製') {
+    return res.status(400).json({ success: false, error: '確認文字不正確，未執行重製' });
+  }
+  const clearedJobs = store.jobs.length;
+  store.jobs = [];
+  store.counter = 0;
+  saveStore();
+  res.json({ success: true, clearedJobs, counter: store.counter });
 });
 
 app.get('/api/admin/printer-status', requireAdmin, async (req, res) => {
