@@ -67,13 +67,15 @@
   }
 
   function activeCanvasRatio() {
-    const ratio = Number(state.config?.canvasRatio || 5);
-    return state.mode === 'handwriting' ? ratio / 1.3 : ratio;
+    const orientation = state.config?.productOrientations?.find((item) => item.id === state.orientation);
+    return Number(orientation?.canvasRatio || state.config?.canvasRatio || 5);
   }
 
   function configureCanvas() {
     const ratio = activeCanvasRatio();
     stage.style.setProperty('--canvas-ratio', String(ratio));
+    const previewHeight = state.orientation === 'vertical' ? 400 : 300;
+    stage.style.setProperty('--canvas-max-width', Math.round(ratio * previewHeight) + 'px');
     const box = stage.getBoundingClientRect();
     const dpr = Math.min(3, window.devicePixelRatio || 1);
     canvas.width = Math.max(1, Math.round(box.width * dpr));
