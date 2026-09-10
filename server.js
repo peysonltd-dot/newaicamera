@@ -14,7 +14,20 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const FEIE_API_URL = process.env.FEIE_API_URL || 'https://api.jp.feieyun.com/Api/Open/';
 const FEIE_USER = process.env.FEIE_USER || '';
 const FEIE_UKEY = process.env.FEIE_UKEY || '';
-const FEIE_SN = process.env.FEIE_SN || '';
+const FEIE_SN_01 = process.env.FEIE_SN_01 || process.env.FEIE_SN || '';
+const FEIE_SN_02 = process.env.FEIE_SN_02 || '961820754';
+const PRINTERS = [
+  { id: '01', name: '出票機 01', sn: FEIE_SN_01 },
+  { id: '02', name: '出票機 02', sn: FEIE_SN_02 }
+];
+
+function findPrinter(id) {
+  return PRINTERS.find((printer) => printer.id === String(id || '')) || PRINTERS[0];
+}
+
+function isPrinterConfigured(printer) {
+  return Boolean(FEIE_USER && FEIE_UKEY && printer?.sn);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '30mb' }));
@@ -75,6 +88,7 @@ function defaultStore() {
       handwritingWidths: [6, 10, 14],
       defaultHandwritingWidth: 10,
       ticketPrefix: '',
+      selectedPrinter: '01',
       autoPrint: true,
       ticketMessage: '請保留票券，憑號取件',
       fonts: builtInFonts()
@@ -196,8 +210,8 @@ function ticketContent(job) {
 }
 
 async function feieRequest(privateParams) {
-  if (!FEIE_USER || !FEIE_UKEY || !FEIE_SN) {
-    throw new Error('尚未完成飛鵝出票機環境變數設定');
+  if (!FEIE_USER || !FEIE_UKEY || !privateParams?.sn) {
+    throw new Error('尚未完成所選出票機設定');
   }
   const stime = Math.floor(Date.now() / 1000).toString();
   const sig = crypto.createHash('sha1').update(FEIE_USER + FEIE_UKEY + stime).digest('hex');
@@ -226,9 +240,13 @@ async function printJob(job) {
   job.printError = '';
   saveStore();
   try {
+    const printer = findPrinter(job.printerId || store.config.selectedPrinter);
+    if (!isPrinterConfigured(printer)) throw new Error('所選出票機尚未完成設定');
+    job.printerId = printer.id;
+    job.printerName = printer.name;
     const result = await feieRequest({
       apiname: 'Open_printMsg',
-      sn: FEIE_SN,
+      sn: printer.sn,
       content: ticketContent(job),
       times: '1'
     });
@@ -248,7 +266,8 @@ app.get('/health', (req, res) => {
     ok: true,
     service: 'peyson-laser-liveprint',
     storage: STORE_FILE,
-    printerConfigured: Boolean(FEIE_USER && FEIE_UKEY && FEIE_SN),
+    printerConfigured: isPrinterConfigured(findPrinter(store.config.selectedPrinter)),
+    activePrinter: findPrinter(store.config.selectedPrinter).id,
     time: nowIso()
   });
 });
@@ -309,6 +328,8 @@ app.post('/api/jobs', (req, res) => {
     png: req.body.png,
     thumbnail: validateDataUrl(req.body?.thumbnail) ? req.body.thumbnail : '',
     status: 'waiting',
+    printerId: findPrinter(store.config.selectedPrinter).id,
+    printerName: findPrinter(store.config.selectedPrinter).name,
     printStatus: store.config.autoPrint ? 'queued' : 'not_requested',
     printError: '',
     remark: '',
@@ -402,7 +423,12 @@ app.get('/api/admin/config', requireAdmin, (req, res) => {
   res.json({
     success: true,
     config: store.config,
-    printerConfigured: Boolean(FEIE_USER && FEIE_UKEY && FEIE_SN)
+    printers: PRINTERS.map((printer) => ({
+      id: printer.id,
+      name: printer.name,
+      configured: isPrinterConfigured(printer)
+    })),
+    printerConfigured: isPrinterConfigured(findPrinter(store.config.selectedPrinter))
   });
 });
 
@@ -421,6 +447,9 @@ app.put('/api/admin/config', requireAdmin, (req, res) => {
     canvasRatio: Math.min(10, Math.max(1, Number(input.canvasRatio || store.config.canvasRatio))),
     outputWidth: Math.min(4000, Math.max(800, Number(input.outputWidth || store.config.outputWidth))),
     ticketPrefix: safeText(input.ticketPrefix ?? store.config.ticketPrefix, 8),
+    selectedPrinter: PRINTERS.some((printer) => printer.id === String(input.selectedPrinter))
+      ? String(input.selectedPrinter)
+      : findPrinter(store.config.selectedPrinter).id,
     autoPrint: Boolean(input.autoPrint),
     ticketMessage: safeText(input.ticketMessage ?? store.config.ticketMessage, 60)
   };
@@ -473,11 +502,17 @@ app.post('/api/admin/reset-event', requireAdmin, (req, res) => {
 
 app.get('/api/admin/printer-status', requireAdmin, async (req, res) => {
   try {
+    const printer = findPrinter(req.query.printerId || store.config.selectedPrinter);
+    if (!isPrinterConfigured(printer)) throw new Error('所選出票機尚未完成設定');
     const result = await feieRequest({
       apiname: 'Open_queryPrinterStatus',
-      sn: FEIE_SN
+      sn: printer.sn
     });
-    res.json({ success: true, data: result.data });
+    res.json({
+      success: true,
+      data: result.data,
+      printer: { id: printer.id, name: printer.name }
+    });
   } catch (error) {
     res.status(502).json({ success: false, error: error.message || String(error) });
   }

@@ -239,6 +239,7 @@
     form.outputWidth.value = c.outputWidth;
     form.ticketPrefix.value = c.ticketPrefix || '';
     form.ticketMessage.value = c.ticketMessage || '';
+    form.selectedPrinter.value = c.selectedPrinter || '01';
     form.autoPrint.checked = Boolean(c.autoPrint);
     $('#counterInput').value = state.counter;
   }
@@ -269,7 +270,10 @@
     try {
       const result = await api('/api/admin/config');
       state.config = result.config;
-      $('#printerStatusText').textContent = result.printerConfigured ? '已完成環境設定' : '尚未設定出票機';
+      const activePrinter = state.config.selectedPrinter || '01';
+      $('#printerStatusText').textContent = result.printerConfigured
+        ? '出票機 ' + activePrinter + ' 已完成設定'
+        : '出票機 ' + activePrinter + ' 尚未設定';
       fillSettings();
       renderAdminFonts();
       registerFonts(state.config.fonts).then(renderAdminFonts);
@@ -297,6 +301,7 @@
           outputWidth: Number(form.outputWidth.value),
           ticketPrefix: form.ticketPrefix.value,
           ticketMessage: form.ticketMessage.value,
+          selectedPrinter: form.selectedPrinter.value,
           autoPrint: form.autoPrint.checked
         })
       });
@@ -381,8 +386,9 @@
   async function printerStatus() {
     $('#printerStatusText').textContent = '檢查中…';
     try {
-      const result = await api('/api/admin/printer-status');
-      $('#printerStatusText').textContent = '出票機狀態：' + String(result.data);
+      const printerId = $('#settingsForm').selectedPrinter.value;
+      const result = await api('/api/admin/printer-status?printerId=' + encodeURIComponent(printerId));
+      $('#printerStatusText').textContent = (result.printer?.name || '出票機 ' + printerId) + ' 狀態：' + String(result.data);
     } catch (error) {
       $('#printerStatusText').textContent = error.message;
     }
