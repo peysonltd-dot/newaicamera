@@ -94,6 +94,12 @@
             <h3>取號與出票</h3>
             <label>號碼前綴<input name="ticketPrefix" maxlength="8" placeholder="可留白"></label>
             <label>票面提示文字<input name="ticketMessage"></label>
+            <label>選擇出票機
+              <select name="selectedPrinter">
+                <option value="01">出票機 01</option>
+                <option value="02">出票機 02</option>
+              </select>
+            </label>
             <label class="check-row"><input name="autoPrint" type="checkbox"> 客人送出後自動出票</label>
             <div class="setting-actions">
               <button id="printerStatusButton" class="secondary-button" type="button">檢查出票機</button>
