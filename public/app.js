@@ -220,9 +220,12 @@
     wrap.innerHTML = '';
     state.config.productColors.forEach((color) => {
       const button = document.createElement('button');
+      const unavailable = (state.config.disabledProductColors || []).includes(color.id);
       button.type = 'button';
-      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '');
+      button.disabled = unavailable;
+      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '') + (unavailable ? ' unavailable' : '');
       button.setAttribute('aria-pressed', color.id === state.productColor ? 'true' : 'false');
+      button.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
 
       if (color.image) {
         const image = document.createElement('img');
@@ -242,6 +245,7 @@
       english.textContent = color.en;
       button.append(label, english);
       button.addEventListener('click', () => {
+        if (unavailable) return;
         state.productColor = color.id;
         renderProductColorChoices();
         renderOrientationChoices();

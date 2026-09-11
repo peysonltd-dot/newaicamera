@@ -82,6 +82,7 @@ function defaultStore() {
         { id: 'vertical', name: '直式', en: 'Vertical', canvasRatio: 1.55 },
         { id: 'horizontal', name: '橫式', en: 'Horizontal', canvasRatio: 2.85 }
       ],
+      disabledProductColors: [],
       maxChars: 20,
       canvasRatio: 5,
       outputWidth: 2000,
@@ -299,6 +300,9 @@ app.post('/api/jobs', (req, res) => {
   if (!selectedColor) {
     return res.status(400).json({ success: false, error: '請選擇證件套顏色' });
   }
+  if ((store.config.disabledProductColors || []).includes(selectedColor.id)) {
+    return res.status(409).json({ success: false, error: '此顏色目前已暫停供應，請選擇其他顏色' });
+  }
   const orientation = safeText(req.body?.orientation, 20);
   const selectedOrientation = store.config.productOrientations.find((item) => item.id === orientation);
   if (!selectedOrientation) {
@@ -437,12 +441,17 @@ app.put('/api/admin/config', requireAdmin, (req, res) => {
   const allowedModes = Array.isArray(input.modes)
     ? input.modes.filter((mode) => ['handwriting', 'typing'].includes(mode))
     : store.config.modes;
+  const validColorIds = new Set(store.config.productColors.map((color) => color.id));
+  const disabledProductColors = Array.isArray(input.disabledProductColors)
+    ? [...new Set(input.disabledProductColors.map(String).filter((id) => validColorIds.has(id)))]
+    : (store.config.disabledProductColors || []);
 
   store.config = {
     ...store.config,
     eventName: safeText(input.eventName ?? store.config.eventName, 50),
     eventSubtitle: safeText(input.eventSubtitle ?? store.config.eventSubtitle, 80),
     modes: allowedModes.length ? allowedModes : ['handwriting'],
+    disabledProductColors,
     maxChars: Math.min(50, Math.max(1, Number(input.maxChars || store.config.maxChars))),
     canvasRatio: Math.min(10, Math.max(1, Number(input.canvasRatio || store.config.canvasRatio))),
     outputWidth: Math.min(4000, Math.max(800, Number(input.outputWidth || store.config.outputWidth))),
