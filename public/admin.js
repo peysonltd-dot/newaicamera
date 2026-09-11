@@ -234,6 +234,20 @@
     form.eventSubtitle.value = c.eventSubtitle;
     form.modeHandwriting.checked = c.modes.includes('handwriting');
     form.modeTyping.checked = c.modes.includes('typing');
+    const disabledColors = new Set(c.disabledProductColors || []);
+    const colorOptions = $('#colorAvailabilityOptions');
+    colorOptions.innerHTML = '';
+    c.productColors.forEach((color) => {
+      const label = document.createElement('label');
+      label.className = 'check-row';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = 'availableColor';
+      input.value = color.id;
+      input.checked = !disabledColors.has(color.id);
+      label.append(input, document.createTextNode(' ' + color.name + '／' + color.en));
+      colorOptions.appendChild(label);
+    });
     form.maxChars.value = c.maxChars;
     form.canvasRatio.value = c.canvasRatio;
     form.outputWidth.value = c.outputWidth;
@@ -296,6 +310,7 @@
           eventName: form.eventName.value,
           eventSubtitle: form.eventSubtitle.value,
           modes,
+          disabledProductColors: Array.from(form.querySelectorAll('input[name="availableColor"]:not(:checked)')).map((input) => input.value),
           maxChars: Number(form.maxChars.value),
           canvasRatio: Number(form.canvasRatio.value),
           outputWidth: Number(form.outputWidth.value),

@@ -82,6 +82,7 @@ function defaultStore() {
         { id: 'vertical', name: '直式', en: 'Vertical', canvasRatio: 1.55 },
         { id: 'horizontal', name: '橫式', en: 'Horizontal', canvasRatio: 2.85 }
       ],
+      disabledProductColors: [],
       maxChars: 20,
       canvasRatio: 5,
       outputWidth: 2000,
@@ -299,6 +300,9 @@ app.post('/api/jobs', (req, res) => {
   if (!selectedColor) {
     return res.status(400).json({ success: false, error: '請選擇證件套顏色' });
   }
+  if ((store.config.disabledProductColors || []).includes(selectedColor.id)) {
+    return res.status(409).json({ success: false, error: '此顏色目前已暫停供應，請選擇其他顏色' });
+  }
   const orientation = safeText(req.body?.orientation, 20);
   const selectedOrientation = store.config.productOrientations.find((item) => item.id === orientation);
   if (!selectedOrientation) {
@@ -385,6 +389,119 @@ app.get('/api/admin/jobs', requireAdmin, (req, res) => {
   res.json({ success: true, jobs, counter: store.counter });
 });
 
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    success: true,
+    exportedAt: nowIso(),
+    backup: store
+  });
+});
+
+app.post('/api/admin/restore-backup', requireAdmin, (req, res) => {
+  if (req.body?.confirmation !== '還原活動資料') {
+    return res.status(400).json({ success: false, error: '確認文字不正確，未執行還原' });
+  }
+
+  const incoming = req.body?.backup;
+  if (!incoming || typeof incoming !== 'object' || !incoming.config || !Array.isArray(incoming.jobs)) {
+    return res.status(400).json({ success: false, error: '備份資料格式不正確' });
+  }
+
+  const defaults = defaultStore();
+  const savedConfig = incoming.config || {};
+  const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : [];
+  const builtInIds = new Set(defaults.config.fonts.map((font) => font.id));
+  const uploadedFonts = savedFonts.filter((font) => (
+    font &&
+    typeof font === 'object' &&
+    !builtInIds.has(String(font.id || '')) &&
+    typeof font.id === 'string' &&
+    typeof font.name === 'string' &&
+    typeof font.data === 'string' &&
+    /^data:(font\/|application\/(font|octet-stream|x-font-|vnd\.ms-fontobject)).*;base64,/i.test(font.data) &&
+    font.data.length <= 12 * 1024 * 1024
+  ));
+  const fonts = defaults.config.fonts.concat(uploadedFonts);
+
+  const savedColors = Array.isArray(savedConfig.productColors) ? savedConfig.productColors : [];
+  const productColors = defaults.config.productColors.map((defaultColor) => ({
+    ...(savedColors.find((color) => color?.id === defaultColor.id) || {}),
+    ...defaultColor
+  }));
+  const validColorIds = new Set(productColors.map((color) => color.id));
+  const disabledProductColors = Array.isArray(savedConfig.disabledProductColors)
+    ? [...new Set(savedConfig.disabledProductColors.map(String).filter((id) => validColorIds.has(id)))]
+    : [];
+
+  const savedOrientations = Array.isArray(savedConfig.productOrientations)
+    ? savedConfig.productOrientations
+    : [];
+  const productOrientations = defaults.config.productOrientations.map((defaultOrientation) => ({
+    ...(savedOrientations.find((item) => item?.id === defaultOrientation.id) || {}),
+    ...defaultOrientation
+  }));
+
+  const jobs = incoming.jobs.map((job) => {
+    if (!job || typeof job !== 'object') return null;
+    const id = safeText(job.id, 20);
+    if (!id || !validateDataUrl(job.png)) return null;
+    return {
+      ...job,
+      id,
+      png: job.png,
+      thumbnail: validateDataUrl(job.thumbnail) ? job.thumbnail : '',
+      updatedAt: safeText(job.updatedAt, 40) || nowIso()
+    };
+  }).filter(Boolean);
+
+  if (jobs.length !== incoming.jobs.length) {
+    return res.status(400).json({
+      success: false,
+      error: '備份中有訂單缺少有效 PNG，為避免遺失資料已停止還原'
+    });
+  }
+
+  const highestJobNumber = jobs.reduce((highest, job) => {
+    const value = Number.parseInt(job.id, 10);
+    return Number.isFinite(value) ? Math.max(highest, value) : highest;
+  }, 0);
+  const requestedCounter = Number(incoming.counter || 0);
+  const restoredCounter = Math.max(
+    highestJobNumber,
+    Number.isFinite(requestedCounter) ? Math.max(0, Math.floor(requestedCounter)) : 0
+  );
+
+  const selectedPrinter = PRINTERS.some((printer) => printer.id === String(savedConfig.selectedPrinter))
+    ? String(savedConfig.selectedPrinter)
+    : defaults.config.selectedPrinter;
+
+  store = {
+    config: {
+      ...defaults.config,
+      ...savedConfig,
+      fonts,
+      productColors,
+      productOrientations,
+      disabledProductColors,
+      selectedPrinter
+    },
+    counter: restoredCounter,
+    jobs
+  };
+  saveStore();
+
+  res.json({
+    success: true,
+    restored: {
+      counter: store.counter,
+      jobCount: store.jobs.length,
+      fontCount: store.config.fonts.length,
+      latestJobId: store.jobs[0]?.id || ''
+    }
+  });
+});
+
 app.get('/api/admin/jobs/:id/file/:type', requireAdmin, (req, res) => {
   const job = findJob(req.params.id);
   if (!job) return res.status(404).json({ success: false, error: '找不到任務' });
@@ -437,12 +554,17 @@ app.put('/api/admin/config', requireAdmin, (req, res) => {
   const allowedModes = Array.isArray(input.modes)
     ? input.modes.filter((mode) => ['handwriting', 'typing'].includes(mode))
     : store.config.modes;
+  const validColorIds = new Set(store.config.productColors.map((color) => color.id));
+  const disabledProductColors = Array.isArray(input.disabledProductColors)
+    ? [...new Set(input.disabledProductColors.map(String).filter((id) => validColorIds.has(id)))]
+    : (store.config.disabledProductColors || []);
 
   store.config = {
     ...store.config,
     eventName: safeText(input.eventName ?? store.config.eventName, 50),
     eventSubtitle: safeText(input.eventSubtitle ?? store.config.eventSubtitle, 80),
     modes: allowedModes.length ? allowedModes : ['handwriting'],
+    disabledProductColors,
     maxChars: Math.min(50, Math.max(1, Number(input.maxChars || store.config.maxChars))),
     canvasRatio: Math.min(10, Math.max(1, Number(input.canvasRatio || store.config.canvasRatio))),
     outputWidth: Math.min(4000, Math.max(800, Number(input.outputWidth || store.config.outputWidth))),

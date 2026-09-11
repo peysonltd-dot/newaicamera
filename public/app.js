@@ -129,12 +129,20 @@
     context.fillStyle = '#000';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
+    let metrics;
     while (size > 10) {
       context.font = String(font?.weight || 700) + ' ' + size + 'px ' + family;
-      if (context.measureText(text).width <= width * .9) break;
+      metrics = context.measureText(text);
+      const left = Number(metrics.actualBoundingBoxLeft || metrics.width / 2);
+      const right = Number(metrics.actualBoundingBoxRight || metrics.width / 2);
+      if (left + right <= width * .82) break;
       size -= Math.max(1, height * .015);
     }
-    context.fillText(text, width / 2, height / 2 + height * .015);
+    metrics = context.measureText(text);
+    const left = Number(metrics.actualBoundingBoxLeft || metrics.width / 2);
+    const right = Number(metrics.actualBoundingBoxRight || metrics.width / 2);
+    const centeredX = width / 2 + (left - right) / 2;
+    context.fillText(text, centeredX, height / 2 + height * .015);
     context.restore();
   }
 
@@ -220,9 +228,12 @@
     wrap.innerHTML = '';
     state.config.productColors.forEach((color) => {
       const button = document.createElement('button');
+      const unavailable = (state.config.disabledProductColors || []).includes(color.id);
       button.type = 'button';
-      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '');
+      button.disabled = unavailable;
+      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '') + (unavailable ? ' unavailable' : '');
       button.setAttribute('aria-pressed', color.id === state.productColor ? 'true' : 'false');
+      button.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
 
       if (color.image) {
         const image = document.createElement('img');
@@ -242,6 +253,7 @@
       english.textContent = color.en;
       button.append(label, english);
       button.addEventListener('click', () => {
+        if (unavailable) return;
         state.productColor = color.id;
         renderProductColorChoices();
         renderOrientationChoices();
