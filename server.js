@@ -61,6 +61,46 @@ function builtInFonts() {
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/jasonhandwriting/JasonHandwriting@master/JasonHandwriting5.ttf',
       builtIn: true
+    },
+    {
+      id: 'font-8f41f93f69b1',
+      name: 'Bebas Neue',
+      family: 'Peyson_font_8f41f93f69b1',
+      weight: 400,
+      url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bebasneue/BebasNeue-Regular.ttf',
+      builtIn: true
+    },
+    {
+      id: 'font-a6a19275dc7d',
+      name: 'Birthstone',
+      family: 'Peyson_font_a6a19275dc7d',
+      weight: 400,
+      url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/birthstone/Birthstone-Regular.ttf',
+      builtIn: true
+    },
+    {
+      id: 'font-c745b650efd9',
+      name: 'Caveat',
+      family: 'Peyson_font_c745b650efd9',
+      weight: 400,
+      url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/caveat/Caveat%5Bwght%5D.ttf',
+      builtIn: true
+    },
+    {
+      id: 'font-2295ca8f6527',
+      name: 'Lugrasimo',
+      family: 'Peyson_font_2295ca8f6527',
+      weight: 400,
+      url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/lugrasimo/Lugrasimo-Regular.ttf',
+      builtIn: true
+    },
+    {
+      id: 'font-df8558400f9e',
+      name: 'Monsieur La Doulaise',
+      family: 'Peyson_font_df8558400f9e',
+      weight: 400,
+      url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/monsieurladoulaise/MonsieurLaDoulaise-Regular.ttf',
+      builtIn: true
     }
   ];
 }
@@ -68,8 +108,8 @@ function builtInFonts() {
 function defaultStore() {
   return {
     config: {
-      eventName: '皮革證件套雷雕體驗',
-      eventSubtitle: '選擇顏色・手寫簽名・專屬文字',
+      eventName: '現場雷雕體驗',
+      eventSubtitle: '自由打字・手寫簽名・專屬創作',
       modes: ['handwriting', 'typing'],
       productColors: [
         { id: 'yellow', name: '黃', en: 'Yellow', swatch: '#d99a00', image: '/assets/passholder-yellow.webp' },
@@ -197,17 +237,29 @@ function findJob(id) {
 function ticketContent(job) {
   const config = store.config;
   const number = safeText(config.ticketPrefix, 8) + job.id;
-  return [
+  const modeName = {
+    handwriting: '手寫簽名',
+    typing: '文字雷雕',
+    combined: '文字＋手寫'
+  }[job.mode] || '客製雷雕';
+  const lines = [
     '<CB>' + safeText(config.eventName, 40) + '</CB><BR>',
     '<CB>------------------------</CB><BR>',
     '<CB><BOLD>' + number + '</BOLD></CB><BR>',
     '<CB>------------------------</CB><BR>',
-    '<C>' + safeText(config.ticketMessage, 60) + '</C><BR>',
-    '<C>證件套顏色：' + safeText(job.productColorName || job.productColor, 12) + '</C><BR>',
-    '<C>雷雕方向：' + safeText(job.orientationName || job.orientation, 12) + '</C><BR>',
-    '<C>' + (job.mode === 'handwriting' ? '手寫簽名' : '文字雷雕') + '</C><BR>',
+    '<C>' + safeText(config.ticketMessage, 60) + '</C><BR>'
+  ];
+  if (job.productColorName || job.productColor) {
+    lines.push('<C>商品顏色：' + safeText(job.productColorName || job.productColor, 12) + '</C><BR>');
+  }
+  if (job.orientationName || job.orientation) {
+    lines.push('<C>雷雕方向：' + safeText(job.orientationName || job.orientation, 12) + '</C><BR>');
+  }
+  lines.push(
+    '<C>' + modeName + '</C><BR>',
     '<C>' + new Date(job.createdAt).toLocaleString('zh-TW', { hour12: false }) + '</C><BR><BR>'
-  ].join('');
+  );
+  return lines.join('');
 }
 
 async function feieRequest(privateParams) {
@@ -291,30 +343,37 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/jobs', (req, res) => {
-  const mode = req.body?.mode === 'typing' ? 'typing' : 'handwriting';
-  if (!store.config.modes.includes(mode)) {
-    return res.status(400).json({ success: false, error: '此輸入模式目前未開放' });
+  const text = safeText(req.body?.text, store.config.maxChars);
+  const hasHandwriting = Boolean(req.body?.hasHandwriting);
+  const mode = text && hasHandwriting ? 'combined' : (text ? 'typing' : 'handwriting');
+  if (!text && !hasHandwriting) {
+    return res.status(400).json({ success: false, error: '請輸入文字或寫下簽名' });
+  }
+  if (text && !store.config.modes.includes('typing')) {
+    return res.status(400).json({ success: false, error: '此場次目前未開放打字功能' });
+  }
+  if (hasHandwriting && !store.config.modes.includes('handwriting')) {
+    return res.status(400).json({ success: false, error: '此場次目前未開放手寫功能' });
   }
   const productColor = safeText(req.body?.productColor, 20);
-  const selectedColor = store.config.productColors.find((color) => color.id === productColor);
-  if (!selectedColor) {
-    return res.status(400).json({ success: false, error: '請選擇證件套顏色' });
+  const selectedColor = productColor
+    ? store.config.productColors.find((color) => color.id === productColor)
+    : null;
+  if (productColor && !selectedColor) {
+    return res.status(400).json({ success: false, error: '商品選項不正確' });
   }
-  if ((store.config.disabledProductColors || []).includes(selectedColor.id)) {
+  if (selectedColor && (store.config.disabledProductColors || []).includes(selectedColor.id)) {
     return res.status(409).json({ success: false, error: '此顏色目前已暫停供應，請選擇其他顏色' });
   }
   const orientation = safeText(req.body?.orientation, 20);
-  const selectedOrientation = store.config.productOrientations.find((item) => item.id === orientation);
-  if (!selectedOrientation) {
-    return res.status(400).json({ success: false, error: '請選擇直式或橫式' });
+  const selectedOrientation = orientation
+    ? store.config.productOrientations.find((item) => item.id === orientation)
+    : null;
+  if (orientation && !selectedOrientation) {
+    return res.status(400).json({ success: false, error: '雷雕方向不正確' });
   }
   if (!validateDataUrl(req.body?.png)) {
     return res.status(400).json({ success: false, error: '圖檔格式錯誤或檔案過大' });
-  }
-
-  const text = mode === 'typing' ? safeText(req.body?.text, store.config.maxChars) : '';
-  if (mode === 'typing' && !text) {
-    return res.status(400).json({ success: false, error: '請輸入雷雕文字' });
   }
 
   store.counter += 1;
@@ -322,10 +381,10 @@ app.post('/api/jobs', (req, res) => {
   const job = {
     id,
     mode,
-    productColor: selectedColor.id,
-    productColorName: selectedColor.name,
-    orientation: selectedOrientation.id,
-    orientationName: selectedOrientation.name,
+    productColor: selectedColor?.id || '',
+    productColorName: selectedColor?.name || '',
+    orientation: selectedOrientation?.id || '',
+    orientationName: selectedOrientation?.name || '',
     text,
     fontId: safeText(req.body?.fontId, 60),
     strokeWidth: Number(req.body?.strokeWidth || 0),

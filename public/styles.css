@@ -51,8 +51,9 @@ button { cursor: pointer; }
 .mode-card small { color: var(--muted); margin-top: 8px; font-size: 14px; }
 .editor-heading { display: flex; gap: 18px; align-items: start; }
 .editor-heading h2 { margin-bottom: 18px; }
+.editor-intro { margin: -10px 0 24px; color: var(--muted); font-size: 14px; }
 .text-button { border: 0; background: transparent; padding: 4px 0; color: var(--muted); }
-.tool-row { display: flex; gap: 20px; justify-content: space-between; align-items: end; margin-bottom: 16px; }
+.tool-row { display: flex; gap: 20px; justify-content: space-between; align-items: end; margin-bottom: 16px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: #faf9f7; }
 .tool-group { display: flex; flex-direction: column; gap: 8px; }
 .tool-label, .input-label, .canvas-label-row { font-size: 13px; font-weight: 700; color: #5f5b55; }
 .segmented { display: flex; border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 3px; background: #f4f3f0; }
@@ -62,7 +63,7 @@ button { cursor: pointer; }
 .secondary-button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 11px; padding: 10px 15px; }
 .secondary-button:disabled { opacity: .35; cursor: default; }
 .danger-text { color: var(--danger); }
-.typing-tools { margin-bottom: 20px; }
+.typing-tools { margin-bottom: 16px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: #faf9f7; }
 .text-input-wrap { position: relative; margin: 8px 0 18px; }
 .text-input-wrap input, .login-card input, .setting-card input, .setting-card select, .compact-input { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 14px 16px; outline: none; }
 .text-input-wrap input { padding-right: 82px; font-size: 19px; }

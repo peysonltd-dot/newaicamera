@@ -1,9 +1,6 @@
 (() => {
   const state = {
     config: null,
-    mode: null,
-    productColor: null,
-    orientation: null,
     strokes: [],
     redo: [],
     drawing: false,
@@ -67,14 +64,13 @@
   }
 
   function activeCanvasRatio() {
-    const orientation = state.config?.productOrientations?.find((item) => item.id === state.orientation);
-    return Number(orientation?.canvasRatio || state.config?.canvasRatio || 5);
+    return Number(state.config?.canvasRatio || 5);
   }
 
   function configureCanvas() {
     const ratio = activeCanvasRatio();
     stage.style.setProperty('--canvas-ratio', String(ratio));
-    const previewHeight = state.orientation === 'vertical' ? 400 : 300;
+    const previewHeight = 300;
     stage.style.setProperty('--canvas-max-width', Math.round(ratio * previewHeight) + 'px');
     const box = stage.getBoundingClientRect();
     const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -152,14 +148,16 @@
     const height = canvas.height / dpr;
     clearVisual(ctx, canvas.width, canvas.height);
 
-    if (state.mode === 'handwriting') {
+    const typingEnabled = state.config?.modes?.includes('typing');
+    const handwritingEnabled = state.config?.modes?.includes('handwriting');
+    if (typingEnabled) drawTyping(ctx, width, height);
+    if (handwritingEnabled) {
       state.strokes.forEach((stroke) => strokePath(ctx, stroke.points, width, height, stroke.width));
       if (state.activeStroke) strokePath(ctx, state.activeStroke.points, width, height, state.activeStroke.width);
-      $('#emptyHint').classList.toggle('hidden', state.strokes.length > 0 || Boolean(state.activeStroke));
-    } else if (state.mode === 'typing') {
-      drawTyping(ctx, width, height);
-      $('#emptyHint').classList.toggle('hidden', Boolean($('#textInput').value.trim()));
     }
+    const hasText = typingEnabled && Boolean($('#textInput').value.trim());
+    const hasHandwriting = handwritingEnabled && (state.strokes.length > 0 || Boolean(state.activeStroke));
+    $('#emptyHint').classList.toggle('hidden', hasText || hasHandwriting);
     updateButtons();
   }
 
@@ -183,7 +181,7 @@
   }
 
   canvas.addEventListener('pointerdown', (event) => {
-    if (state.mode !== 'handwriting' || state.submitting) return;
+    if (!state.config?.modes?.includes('handwriting') || state.submitting) return;
     event.preventDefault();
     canvas.setPointerCapture(event.pointerId);
     state.drawing = true;
@@ -194,7 +192,7 @@
   });
 
   canvas.addEventListener('pointermove', (event) => {
-    if (!state.drawing || state.mode !== 'handwriting') return;
+    if (!state.drawing || !state.config?.modes?.includes('handwriting')) return;
     event.preventDefault();
     const events = typeof event.getCoalescedEvents === 'function' ? event.getCoalescedEvents() : [event];
     events.forEach(addPoint);
@@ -217,68 +215,8 @@
   function updateButtons() {
     $('#undoButton').disabled = state.strokes.length === 0;
     $('#redoButton').disabled = state.redo.length === 0;
-    const hasContent = state.mode === 'handwriting'
-      ? state.strokes.length > 0
-      : Boolean($('#textInput').value.trim());
+    const hasContent = state.strokes.length > 0 || Boolean($('#textInput').value.trim());
     $('#submitButton').disabled = !hasContent || state.submitting;
-  }
-
-  function renderProductColorChoices() {
-    const wrap = $('#productColorChoices');
-    wrap.innerHTML = '';
-    state.config.productColors.forEach((color) => {
-      const button = document.createElement('button');
-      const unavailable = (state.config.disabledProductColors || []).includes(color.id);
-      button.type = 'button';
-      button.disabled = unavailable;
-      button.className = 'color-choice' + (color.id === state.productColor ? ' active' : '') + (unavailable ? ' unavailable' : '');
-      button.setAttribute('aria-pressed', color.id === state.productColor ? 'true' : 'false');
-      button.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
-
-      if (color.image) {
-        const image = document.createElement('img');
-        image.src = color.image;
-        image.alt = color.name + '色證件套';
-        button.appendChild(image);
-      } else {
-        const swatch = document.createElement('span');
-        swatch.className = 'color-swatch';
-        swatch.style.background = color.swatch;
-        button.appendChild(swatch);
-      }
-
-      const label = document.createElement('strong');
-      label.textContent = color.name;
-      const english = document.createElement('small');
-      english.textContent = color.en;
-      button.append(label, english);
-      button.addEventListener('click', () => {
-        if (unavailable) return;
-        state.productColor = color.id;
-        renderProductColorChoices();
-        renderOrientationChoices();
-        renderModeChoices();
-      });
-      wrap.appendChild(button);
-    });
-  }
-
-  function renderOrientationChoices() {
-    const color = state.config.productColors.find((item) => item.id === state.productColor);
-    document.querySelectorAll('.orientation-card').forEach((button) => {
-      button.disabled = !color;
-      button.classList.toggle('active', button.dataset.orientation === state.orientation);
-      button.setAttribute('aria-pressed', button.dataset.orientation === state.orientation ? 'true' : 'false');
-      button.style.setProperty('--tag-color', color?.swatch || '#c48c62');
-    });
-  }
-
-  function renderModeChoices() {
-    document.querySelectorAll('.mode-card').forEach((button) => {
-      button.classList.toggle('hidden', !state.config.modes.includes(button.dataset.mode));
-      button.disabled = !state.productColor || !state.orientation;
-    });
-    if (state.productColor && state.orientation && state.config.modes.length === 1) selectMode(state.config.modes[0]);
   }
 
   function renderWidths() {
@@ -342,40 +280,15 @@
     });
   }
 
-  function selectMode(mode) {
-    if (!state.productColor) return showToast('請先選擇證件套顏色');
-    if (!state.orientation) return showToast('請先選擇直式或橫式');
-    state.mode = mode;
+  function resetEditor() {
     state.strokes = [];
     state.redo = [];
     state.activeStroke = null;
     $('#textInput').value = '';
     $('#charCounter').textContent = '0 / ' + state.config.maxChars;
-    $('#modeStep').classList.add('hidden');
-    $('#editorStep').classList.remove('hidden');
-    $('#handwritingTools').classList.toggle('hidden', mode !== 'handwriting');
-    $('#typingTools').classList.toggle('hidden', mode !== 'typing');
-    $('#editorTitle').textContent = mode === 'handwriting' ? '寫下簽名或圖案' : '輸入雷雕文字';
-    $('#emptyHint').innerHTML = mode === 'handwriting'
-      ? '<b>請在框內書寫</b><span>建議簽名盡量寫大、筆畫不要重疊</span>'
-      : '<b>請先輸入文字</b><span>系統會自動置中並調整大小</span>';
-    requestAnimationFrame(configureCanvas);
-  }
-
-  function resetToMode(clearProductColor = false) {
-    state.mode = null;
-    state.strokes = [];
-    state.redo = [];
-    if (clearProductColor) {
-      state.productColor = null;
-      state.orientation = null;
-    }
-    $('#editorStep').classList.add('hidden');
     $('#successStep').classList.add('hidden');
-    $('#modeStep').classList.remove('hidden');
-    renderProductColorChoices();
-    renderOrientationChoices();
-    renderModeChoices();
+    $('#editorStep').classList.remove('hidden');
+    requestAnimationFrame(configureCanvas);
   }
 
   function createOutput(width) {
@@ -385,14 +298,13 @@
     output.height = Math.max(1, Math.round(width / ratio));
     const out = output.getContext('2d', { alpha: true });
     out.clearRect(0, 0, output.width, output.height);
-    if (state.mode === 'handwriting') {
+    if (state.config.modes.includes('typing')) drawTyping(out, output.width, output.height);
+    if (state.config.modes.includes('handwriting')) {
       const visualWidth = Math.max(1, canvas.getBoundingClientRect().width);
       state.strokes.forEach((stroke) => {
         const scaledWidth = stroke.width * output.width / visualWidth;
         strokePath(out, stroke.points, output.width, output.height, scaledWidth);
       });
-    } else {
-      drawTyping(out, output.width, output.height);
     }
     return output.toDataURL('image/png');
   }
@@ -414,7 +326,7 @@
   }
 
   function createSvg() {
-    if (state.mode !== 'handwriting') return '';
+    if (!state.strokes.length) return '';
     const width = Number(state.config.outputWidth || 2000);
     const height = Math.round(width / activeCanvasRatio());
     const visualWidth = Math.max(1, canvas.getBoundingClientRect().width);
@@ -427,10 +339,10 @@
 
   async function submit() {
     if (state.submitting) return;
-    const hasContent = state.mode === 'handwriting'
-      ? state.strokes.length > 0
-      : Boolean($('#textInput').value.trim());
-    if (!hasContent) return showToast(state.mode === 'typing' ? '請先輸入文字' : '請先寫下簽名');
+    const text = state.config.modes.includes('typing') ? $('#textInput').value.trim() : '';
+    const hasHandwriting = state.config.modes.includes('handwriting') && state.strokes.length > 0;
+    if (!text && !hasHandwriting) return showToast('請輸入文字或寫下簽名');
+    const mode = text && hasHandwriting ? 'combined' : (text ? 'typing' : 'handwriting');
 
     state.submitting = true;
     updateButtons();
@@ -438,10 +350,11 @@
 
     try {
       const body = {
-        mode: state.mode,
-        productColor: state.productColor,
-        orientation: state.orientation,
-        text: state.mode === 'typing' ? $('#textInput').value.trim() : '',
+        mode,
+        productColor: '',
+        orientation: '',
+        text,
+        hasHandwriting,
         fontId: state.fontId || '',
         strokeWidth: state.strokeWidth,
         png: createOutput(Number(state.config.outputWidth || 2000)),
@@ -476,9 +389,8 @@
       $('#eventName').textContent = state.config.eventName;
       $('#eventSubtitle').textContent = state.config.eventSubtitle;
       $('#textInput').maxLength = Number(state.config.maxChars);
-      renderProductColorChoices();
-      renderOrientationChoices();
-      renderModeChoices();
+      $('#typingTools').classList.toggle('hidden', !state.config.modes.includes('typing'));
+      $('#handwritingTools').classList.toggle('hidden', !state.config.modes.includes('handwriting'));
       loadFonts(state.config.fonts).then(() => {
         renderFontChoices();
         redraw();
@@ -491,20 +403,7 @@
     }
   }
 
-  document.querySelectorAll('.orientation-card').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (!state.productColor) return showToast('請先選擇證件套顏色');
-      state.orientation = button.dataset.orientation;
-      renderOrientationChoices();
-      renderModeChoices();
-    });
-  });
-
-  document.querySelectorAll('.mode-card').forEach((button) => {
-    button.addEventListener('click', () => selectMode(button.dataset.mode));
-  });
-  $('#backButton').addEventListener('click', () => resetToMode(false));
-  $('#newOrderButton').addEventListener('click', () => resetToMode(true));
+  $('#newOrderButton').addEventListener('click', resetEditor);
   $('#undoButton').addEventListener('click', () => {
     const stroke = state.strokes.pop();
     if (stroke) state.redo.push(stroke);

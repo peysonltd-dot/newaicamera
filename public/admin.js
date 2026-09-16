@@ -103,12 +103,16 @@
       const meta = document.createElement('div');
       meta.className = 'job-meta';
       const title = document.createElement('strong');
-      title.textContent = job.mode === 'handwriting' ? '手寫簽名' : (job.text || '文字雷雕');
-      if (job.mode === 'typing' && job.fontId) title.title = '字體：' + job.fontId;
+      title.textContent = job.mode === 'handwriting'
+        ? '手寫簽名'
+        : (job.mode === 'combined' ? ((job.text || '文字') + '＋手寫') : (job.text || '文字雷雕'));
+      if ((job.mode === 'typing' || job.mode === 'combined') && job.fontId) title.title = '字體：' + job.fontId;
       const line1 = document.createElement('small');
-      const productColor = job.productColorName ? job.productColorName + '色證件套' : '未標示顏色';
-      const orientation = job.orientationName ? job.orientationName + '雷雕' : '未標示方向';
-      line1.textContent = productColor + '・' + orientation + '・' + statusName(job.status) + '・' + formatTime(job.createdAt);
+      const details = [];
+      if (job.productColorName) details.push(job.productColorName + '色商品');
+      if (job.orientationName) details.push(job.orientationName + '雷雕');
+      details.push(statusName(job.status), formatTime(job.createdAt));
+      line1.textContent = details.join('・');
       const line2 = document.createElement('small');
       line2.textContent = printName(job);
       if (job.printStatus === 'failed') line2.className = 'print-failed';
@@ -234,20 +238,6 @@
     form.eventSubtitle.value = c.eventSubtitle;
     form.modeHandwriting.checked = c.modes.includes('handwriting');
     form.modeTyping.checked = c.modes.includes('typing');
-    const disabledColors = new Set(c.disabledProductColors || []);
-    const colorOptions = $('#colorAvailabilityOptions');
-    colorOptions.innerHTML = '';
-    c.productColors.forEach((color) => {
-      const label = document.createElement('label');
-      label.className = 'check-row';
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.name = 'availableColor';
-      input.value = color.id;
-      input.checked = !disabledColors.has(color.id);
-      label.append(input, document.createTextNode(' ' + color.name + '／' + color.en));
-      colorOptions.appendChild(label);
-    });
     form.maxChars.value = c.maxChars;
     form.canvasRatio.value = c.canvasRatio;
     form.outputWidth.value = c.outputWidth;
@@ -310,7 +300,6 @@
           eventName: form.eventName.value,
           eventSubtitle: form.eventSubtitle.value,
           modes,
-          disabledProductColors: Array.from(form.querySelectorAll('input[name="availableColor"]:not(:checked)')).map((input) => input.value),
           maxChars: Number(form.maxChars.value),
           canvasRatio: Number(form.canvasRatio.value),
           outputWidth: Number(form.outputWidth.value),

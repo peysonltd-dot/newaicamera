@@ -21,90 +21,38 @@
     <header class="brand-header">
       <div class="eyebrow">PEYSON LIVE ENGRAVING</div>
       <h1 id="eventName">現場雷雕體驗</h1>
-      <p id="eventSubtitle">手寫簽名・專屬文字</p>
+      <p id="eventSubtitle">自由打字・手寫簽名・專屬創作</p>
     </header>
 
-    <section id="modeStep" class="panel step-panel">
-      <div class="product-section">
-        <div class="step-kicker">STEP 1</div>
-        <h2>選擇證件套顏色 <small class="section-en">Choose a color</small></h2>
-        <div id="productColorChoices" class="color-grid"></div>
-      </div>
-
-      <div class="orientation-section">
-        <div class="step-kicker">STEP 2</div>
-        <h2>選擇雷雕方向 <small class="section-en">Choose an orientation</small></h2>
-        <div id="orientationChoices" class="orientation-grid">
-          <button class="orientation-card" data-orientation="vertical" type="button" disabled>
-            <span class="orientation-demo orientation-vertical">
-              <span class="tag-nub"></span>
-              <span class="custom-zone"><b>客製區</b><small>Signature / Text</small></span>
-              <span class="logo-zone">固定 LOGO</span>
-            </span>
-            <strong>直式</strong>
-            <small>Vertical</small>
-          </button>
-          <button class="orientation-card" data-orientation="horizontal" type="button" disabled>
-            <span class="orientation-demo orientation-horizontal">
-              <span class="tag-nub"></span>
-              <span class="custom-zone"><b>客製區</b><small>Signature / Text</small></span>
-              <span class="logo-zone">固定 LOGO</span>
-            </span>
-            <strong>橫式</strong>
-            <small>Horizontal</small>
-          </button>
-        </div>
-      </div>
-
-      <div class="mode-section">
-        <div class="step-kicker">STEP 3</div>
-        <h2>選擇製作方式</h2>
-        <div id="modeChoices" class="mode-grid">
-          <button class="mode-card" data-mode="handwriting">
-            <span class="mode-icon">✍︎</span>
-            <strong>手寫簽名</strong>
-            <span class="button-en">Handwriting</span>
-            <small>使用觸控筆或手指書寫</small>
-          </button>
-          <button class="mode-card" data-mode="typing">
-            <span class="mode-icon">Aa</span>
-            <strong>輸入文字</strong>
-            <span class="button-en">Typing</span>
-            <small>選擇字體並即時預覽</small>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section id="editorStep" class="panel editor-panel hidden">
+    <section id="editorStep" class="panel editor-panel">
       <div class="editor-heading">
-        <button id="backButton" class="text-button bilingual-button" type="button"><span class="button-main">‹ 返回</span><small class="button-en">Back</small></button>
         <div>
-          <div class="step-kicker">STEP 4</div>
+          <div class="step-kicker">DESIGN</div>
           <h2 id="editorTitle">設計雷雕內容</h2>
+          <p class="editor-intro">可自由選擇打字、手寫，或兩者一起使用。</p>
         </div>
       </div>
 
-      <div id="handwritingTools" class="tool-row hidden">
+      <div id="typingTools" class="typing-tools">
+        <label class="input-label" for="textInput">輸入文字（可留白）</label>
+        <div class="text-input-wrap">
+          <input id="textInput" type="text" autocomplete="off" inputmode="text" placeholder="請輸入文字，或直接在下方手寫">
+          <span id="charCounter">0 / 20</span>
+        </div>
+        <div class="input-label">選擇字體</div>
+        <div id="fontChoices" class="font-grid"></div>
+      </div>
+
+      <div id="handwritingTools" class="tool-row">
         <div class="tool-group">
-          <span class="tool-label">筆畫粗細</span>
+          <span class="tool-label">手寫筆畫粗細</span>
           <div id="widthChoices" class="segmented"></div>
         </div>
         <div class="tool-actions">
           <button id="undoButton" class="secondary-button bilingual-button" type="button"><span class="button-main"><span class="button-symbol" aria-hidden="true">↶</span>復原</span><small class="button-en">Undo</small></button>
           <button id="redoButton" class="secondary-button bilingual-button" type="button"><span class="button-main"><span class="button-symbol" aria-hidden="true">↷</span>重做</span><small class="button-en">Redo</small></button>
-          <button id="clearButton" class="secondary-button danger-text bilingual-button" type="button"><span class="button-main">清除</span><small class="button-en">Clear</small></button>
+          <button id="clearButton" class="secondary-button danger-text bilingual-button" type="button"><span class="button-main">清除手寫</span><small class="button-en">Clear</small></button>
         </div>
-      </div>
-
-      <div id="typingTools" class="typing-tools hidden">
-        <label class="input-label" for="textInput">雷雕文字</label>
-        <div class="text-input-wrap">
-          <input id="textInput" type="text" autocomplete="off" inputmode="text" placeholder="請輸入文字">
-          <span id="charCounter">0 / 20</span>
-        </div>
-        <div class="input-label">選擇字體</div>
-        <div id="fontChoices" class="font-grid"></div>
       </div>
 
       <div class="canvas-label-row">
@@ -114,8 +62,8 @@
       <div id="canvasStage" class="canvas-stage">
         <canvas id="designCanvas"></canvas>
         <div id="emptyHint" class="canvas-empty">
-          <b>請在框內書寫</b>
-          <span>建議簽名盡量寫大、筆畫不要重疊</span>
+          <b>請輸入文字或在框內書寫</b>
+          <span>打字與手寫內容會合成為同一張雷雕圖</span>
         </div>
       </div>
 
