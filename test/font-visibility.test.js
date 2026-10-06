@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const net = require('node:net');
+const crypto = require('node:crypto');
+const { importFontPack } = require('../scripts/import-font-pack');
 
 test('font visibility preserves the catalog, jobs, settings and backup state', async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'peyson-font-test-'));
@@ -118,4 +120,44 @@ test('font visibility preserves the catalog, jobs, settings and backup state', a
   invalid.config.fonts.push({ id: 'invalid', name: 'Invalid' });
   await api('/api/admin/restore-backup', 'POST', { confirmation: '還原活動資料', backup: invalid }, 400);
   assert.deepEqual(await backup(), finalState);
+
+  // Exercise batch import, idempotence and preservation using a supplied real pack
+  // when available; otherwise use small payloads to test the API data contract.
+  let manifestPath = process.env.FONT_PACK_MANIFEST;
+  if (!manifestPath) {
+    const fonts = ['Microsoft YaHei', 'Script MT Bold', 'Times New Roman'].map((name, i) => {
+      const bytes = Buffer.from('font-api-fixture-' + i);
+      const file = `fixture-${i}.woff`;
+      fs.writeFileSync(path.join(dataDir, file), bytes);
+      return { name, file, mime: 'font/woff', sha256: crypto.createHash('sha256').update(bytes).digest('hex') };
+    });
+    manifestPath = path.join(dataDir, 'manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify({ fonts }));
+  }
+  const options = { baseUrl: base, manifestPath, password, backupDirectory: path.join(dataDir, 'backups') };
+  assert.equal((await importFontPack(options)).applied, false);
+  assert.deepEqual(await backup(), finalState);
+  const imported = await importFontPack({ ...options, apply: true });
+  assert.deepEqual(imported.visibleFonts, ['Microsoft YaHei', 'Script MT Bold', 'Times New Roman']);
+  assert.deepEqual(JSON.parse(fs.readFileSync(imported.backupPath)).backup, finalState);
+  const afterImport = await backup();
+  assert.deepEqual(afterImport.jobs, finalState.jobs);
+  assert.equal(afterImport.counter, finalState.counter);
+  assert.deepEqual({ ...afterImport.config, fonts: [] }, { ...finalState.config, fonts: [] });
+  assert.equal(afterImport.config.fonts.length, finalState.config.fonts.length + 3);
+  assert.ok(afterImport.config.fonts.slice(0, finalState.config.fonts.length).every((font) => !font.enabled));
+  for (const font of await publicFonts()) {
+    const response = await fetch(base + font.url);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type'), /^font\/woff/);
+    const stored = afterImport.config.fonts.find((item) => item.id === font.id);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), Buffer.from(stored.data.split(',')[1], 'base64'));
+  }
+  await importFontPack({ ...options, apply: true });
+  assert.deepEqual(await backup(), afterImport);
+  await stop();
+  await start();
+  assert.deepEqual(await backup(), afterImport);
+  await api('/api/admin/restore-backup', 'POST', { confirmation: '還原活動資料', backup: afterImport });
+  assert.deepEqual(await backup(), afterImport);
 });

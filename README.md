@@ -35,6 +35,7 @@
 - 所有字體均可勾選「前台使用」，取消勾選只隱藏，不刪除字型檔或舊訂單。
 - 新上傳字體預設僅保留於後台；上傳時可勾選啟用，也可日後在字體庫開啟。
 - 字體啟用狀態隨活動資料保存，重啟、重製活動及備份還原均沿用；不再強制補回內建字體。
+- 可用 `scripts/import-font-pack.js` 匯入使用者提供的字體包，先備份、上傳成功後才切換前台字體；舊字體保留於後台。字體檔不需加入程式碼或設為內建。
 - 流水號重設
 - 出票機狀態檢查
 
@@ -71,6 +72,19 @@ npm start
 ```
 
 開啟 `http://localhost:10000`，後台為 `http://localhost:10000/admin`。
+
+## 匯入活動字體包
+
+先部署支援「前台使用」勾選框的版本。字體包的 `manifest.json` 包含 `fonts` 陣列，每款指定 `name`、相對路徑 `file`、`mime` 及檔案 `sha256`。透過環境變數傳入 `ADMIN_PASSWORD`，不把密碼寫進指令或提交至 GitHub。
+
+```bash
+# 預覽匯入，不修改系統
+node scripts/import-font-pack.js https://YOUR-SERVICE.onrender.com /path/to/manifest.json /private/backup-directory
+# 先備份，再啟用包內字體、停用其餘字體
+node scripts/import-font-pack.js https://YOUR-SERVICE.onrender.com /path/to/manifest.json /private/backup-directory --apply
+```
+
+重複匯入同一檔案不新增重複字體。此操作不重啟服務，也不更新訂單、流水號或其他場次設定；產生的完整備份應保存在私人位置，不提交至程式碼庫。
 
 ## 飛鵝出票
 
