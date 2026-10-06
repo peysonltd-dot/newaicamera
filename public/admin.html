@@ -136,10 +136,12 @@
             <label>前台顯示名稱<input id="fontNameInput" required placeholder="例如：手寫風"></label>
             <label>字體檔案<input id="fontFileInput" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" required></label>
             <p>支援 TTF、OTF、WOFF、WOFF2，請確認具有活動及商用授權。</p>
+            <label class="check-row"><input id="fontEnabledInput" type="checkbox">上傳後開放前台使用</label>
             <button class="primary-button" type="submit">上傳字體</button>
           </form>
           <div>
-            <h3>目前可選字體</h3>
+            <h3>字體庫</h3>
+            <p class="font-library-help">勾選「前台使用」即儲存。取消勾選只隱藏，字體及既有訂單均保留。前台重新整理後更新清單。</p>
             <div id="adminFontList" class="admin-font-list"></div>
           </div>
         </div>

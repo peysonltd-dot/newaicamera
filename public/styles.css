@@ -149,6 +149,12 @@ input:focus, select:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30
 .admin-font-list { display: grid; gap: 10px; }
 .admin-font-item { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .admin-font-preview { font-size: 22px; }
+.admin-font-item { flex-wrap: wrap; }
+.admin-font-preview { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.font-admin-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.font-enabled-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; font-size: 14px; }
+.font-enabled-toggle input { width: 20px; height: 20px; accent-color: #171717; cursor: pointer; }
+.font-library-help { color: var(--muted); font-size: 14px; line-height: 1.6; }
 .login-card { width: min(410px, calc(100% - 32px)); background: #fff; border-radius: 22px; box-shadow: var(--shadow); padding: 34px; }
 .login-card h1 { margin: 8px 0; }
 .login-card p { color: var(--muted); }

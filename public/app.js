@@ -27,17 +27,22 @@
   async function request(url, options) {
     const response = await fetch(url, options);
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body.success === false) throw new Error(body.error || '連線失敗');
+    if (!response.ok || body.success === false) {
+      const error = new Error(body.error || '連線失敗');
+      error.code = body.code;
+      throw error;
+    }
     return body;
   }
 
   function currentFont() {
-    return state.config.fonts.find((font) => font.id === state.fontId) || state.config.fonts[0];
+    return state.config.fonts.find((font) => font.id === state.fontId);
   }
 
   async function ensureFontLoaded(font) {
     const source = font?.data || font?.url;
-    if (!source || state.fontsLoaded.has(font.id)) return;
+    if (!source) return;
+    if (state.fontsLoaded.has(font.id)) return state.fontsLoaded.get(font.id);
     const loading = (async () => {
       const face = new FontFace(font.family, 'url("' + source + '")');
       await face.load();
@@ -119,6 +124,7 @@
     const text = $('#textInput').value.trim();
     if (!text) return;
     const font = currentFont();
+    if (!font) return;
     const family = font?.family || 'sans-serif';
     let size = height * .62;
     context.save();
@@ -216,7 +222,8 @@
     $('#undoButton').disabled = state.strokes.length === 0;
     $('#redoButton').disabled = state.redo.length === 0;
     const hasContent = state.strokes.length > 0 || Boolean($('#textInput').value.trim());
-    $('#submitButton').disabled = !hasContent || state.submitting;
+    const missingFont = Boolean($('#textInput').value.trim()) && state.config?.modes?.includes('typing') && !currentFont();
+    $('#submitButton').disabled = !hasContent || state.submitting || missingFont;
   }
 
   function renderWidths() {
@@ -255,6 +262,13 @@
   function renderFontChoices() {
     const wrap = $('#fontChoices');
     wrap.innerHTML = '';
+    if (!state.config.fonts.length) {
+      const message = document.createElement('p');
+      message.className = 'font-library-help';
+      message.textContent = '目前沒有開放使用的字體，打字暫停使用。';
+      wrap.appendChild(message);
+    }
+    $('#textInput').disabled = state.config.fonts.length === 0 && !$('#textInput').value;
     state.config.fonts.forEach((font) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -342,6 +356,7 @@
     const text = state.config.modes.includes('typing') ? $('#textInput').value.trim() : '';
     const hasHandwriting = state.config.modes.includes('handwriting') && state.strokes.length > 0;
     if (!text && !hasHandwriting) return showToast('請輸入文字或寫下簽名');
+    if (text && !currentFont()) return showToast('請選擇可使用的字體，或清除文字後只送出手寫');
     const mode = text && hasHandwriting ? 'combined' : (text ? 'typing' : 'handwriting');
 
     state.submitting = true;
@@ -349,6 +364,7 @@
     $('#loadingOverlay').classList.remove('hidden');
 
     try {
+      if (text) await ensureFontLoaded(currentFont());
       const body = {
         mode,
         productColor: '',
@@ -372,6 +388,15 @@
         ? '票券將由出票機自動印出，請妥善保留。'
         : '請記住此號碼，完成後依號碼取件。';
     } catch (error) {
+      if (error.code === 'FONT_UNAVAILABLE') {
+        try {
+          const result = await request('/api/config');
+          state.config.fonts = result.config.fonts;
+          state.fontId = null;
+          renderFontChoices();
+          redraw();
+        } catch { /* Preserve the design if the refresh fails. */ }
+      }
       showToast(error.message);
     } finally {
       state.submitting = false;

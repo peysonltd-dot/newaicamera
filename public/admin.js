@@ -7,7 +7,8 @@
     filter: 'all',
     tab: 'jobs',
     poller: null,
-    fontFaces: new Map()
+    fontFaces: new Map(),
+    savingFonts: new Set()
   };
   const $ = (selector) => document.querySelector(selector);
 
@@ -259,15 +260,43 @@
       preview.style.fontFamily = font.family;
       preview.textContent = font.name + '｜現場雷雕 Aa';
       row.appendChild(preview);
-      if (!font.builtIn) {
-        row.appendChild(button('刪除', 'mini-button danger-text', () => deleteFont(font.id)));
-      } else {
-        const tag = document.createElement('small');
-        tag.textContent = '內建';
-        row.appendChild(tag);
-      }
+      const actions = document.createElement('div');
+      actions.className = 'font-admin-actions';
+      const label = document.createElement('label');
+      label.className = 'font-enabled-toggle';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = font.enabled !== false;
+      checkbox.disabled = state.savingFonts.has(font.id);
+      checkbox.setAttribute('aria-label', font.name + '：前台使用');
+      checkbox.addEventListener('change', () => toggleFont(font, checkbox.checked));
+      label.append(checkbox, document.createTextNode('前台使用'));
+      const remove = button('刪除', 'mini-button danger-text', () => deleteFont(font.id));
+      remove.disabled = state.savingFonts.has(font.id);
+      actions.append(label, remove);
+      row.appendChild(actions);
       wrap.appendChild(row);
     });
+  }
+
+  async function toggleFont(font, enabled) {
+    if (state.savingFonts.has(font.id)) return;
+    state.savingFonts.add(font.id);
+    renderAdminFonts();
+    try {
+      const result = await api('/api/admin/fonts/' + encodeURIComponent(font.id), {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+      const current = state.config.fonts.find((item) => item.id === font.id);
+      if (current) current.enabled = result.enabled;
+      toast(result.enabled ? '已開放前台使用' : '已從前台隱藏，字體仍保留在後台');
+    } catch (error) { toast(error.message); }
+    finally {
+      state.savingFonts.delete(font.id);
+      renderAdminFonts();
+    }
   }
 
   async function loadConfig() {
@@ -370,7 +399,7 @@
       await api('/api/admin/fonts', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, data, mime: file.type })
+        body: JSON.stringify({ name, data, mime: file.type, enabled: $('#fontEnabledInput').checked })
       });
       form.reset();
       await loadConfig();
@@ -379,7 +408,7 @@
   }
 
   async function deleteFont(id) {
-    if (!confirm('確定刪除這個字體？')) return;
+    if (!confirm('確定永久刪除這個字體？若只想從前台隱藏，請取消勾選「前台使用」。')) return;
     try {
       await api('/api/admin/fonts/' + id, { method: 'DELETE' });
       await loadConfig();

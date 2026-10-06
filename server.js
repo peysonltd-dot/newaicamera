@@ -34,17 +34,17 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
-function builtInFonts() {
+function defaultFonts() {
   return [
-    { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', weight: 700, builtIn: true },
-    { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', weight: 400, builtIn: true },
+    { id: 'system-sans', name: '經典黑體', family: 'Arial, "Noto Sans TC", sans-serif', weight: 700, enabled: true },
+    { id: 'system-serif', name: '典雅明體', family: '"Times New Roman", "Noto Serif TC", serif', weight: 400, enabled: true },
     {
       id: 'chenyu-luoyan',
       name: '辰宇落雁體',
       family: 'Peyson_Chenyu_Luoyan',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin@main/ChenYuluoyan-2.0-Thin.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'iansui',
@@ -52,7 +52,7 @@ function builtInFonts() {
       family: 'Peyson_Iansui',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@main/fonts/ttf/Iansui-Regular.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'jason-handwriting-5',
@@ -60,7 +60,7 @@ function builtInFonts() {
       family: 'Peyson_Jason_Handwriting_5',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/jasonhandwriting/JasonHandwriting@master/JasonHandwriting5.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'font-8f41f93f69b1',
@@ -68,7 +68,7 @@ function builtInFonts() {
       family: 'Peyson_font_8f41f93f69b1',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bebasneue/BebasNeue-Regular.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'font-a6a19275dc7d',
@@ -76,7 +76,7 @@ function builtInFonts() {
       family: 'Peyson_font_a6a19275dc7d',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/birthstone/Birthstone-Regular.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'font-c745b650efd9',
@@ -84,7 +84,7 @@ function builtInFonts() {
       family: 'Peyson_font_c745b650efd9',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/caveat/Caveat%5Bwght%5D.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'font-2295ca8f6527',
@@ -92,7 +92,7 @@ function builtInFonts() {
       family: 'Peyson_font_2295ca8f6527',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/lugrasimo/Lugrasimo-Regular.ttf',
-      builtIn: true
+      enabled: true
     },
     {
       id: 'font-df8558400f9e',
@@ -100,9 +100,15 @@ function builtInFonts() {
       family: 'Peyson_font_df8558400f9e',
       weight: 400,
       url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/monsieurladoulaise/MonsieurLaDoulaise-Regular.ttf',
-      builtIn: true
+      enabled: true
     }
   ];
+}
+
+// Existing catalogs (including an empty catalog) are authoritative. Never
+// re-add or force-enable fonts during a restart or backup restore.
+function normalizeFonts(fonts) {
+  return fonts.map(({ builtIn, ...font }) => ({ ...font, enabled: font.enabled !== false }));
 }
 
 function defaultStore() {
@@ -132,7 +138,7 @@ function defaultStore() {
       selectedPrinter: '01',
       autoPrint: true,
       ticketMessage: '請保留票券，憑號取件',
-      fonts: builtInFonts()
+      fonts: defaultFonts()
     },
     counter: 0,
     jobs: []
@@ -152,9 +158,7 @@ function loadStore() {
     const parsed = JSON.parse(fs.readFileSync(STORE_FILE, 'utf8'));
     const defaults = defaultStore();
     const savedConfig = parsed.config || {};
-    const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : [];
-    const builtInIds = new Set(defaults.config.fonts.map((font) => font.id));
-    const fonts = defaults.config.fonts.concat(savedFonts.filter((font) => !builtInIds.has(font.id)));
+    const fonts = normalizeFonts(Array.isArray(savedConfig.fonts) ? savedConfig.fonts : defaults.config.fonts);
     const savedColors = Array.isArray(savedConfig.productColors) ? savedConfig.productColors : [];
     const productColors = defaults.config.productColors.map((defaultColor) => ({
       ...(savedColors.find((color) => color.id === defaultColor.id) || {}),
@@ -188,7 +192,7 @@ function saveStore() {
 function publicConfig() {
   return {
     ...store.config,
-    fonts: store.config.fonts.map(({ data, ...font }) => (
+    fonts: store.config.fonts.filter((font) => font.enabled !== false).map(({ data, ...font }) => (
       data
         ? { ...font, url: '/api/fonts/' + encodeURIComponent(font.id) }
         : font
@@ -355,6 +359,10 @@ app.post('/api/jobs', (req, res) => {
   if (hasHandwriting && !store.config.modes.includes('handwriting')) {
     return res.status(400).json({ success: false, error: '此場次目前未開放手寫功能' });
   }
+  const selectedFont = store.config.fonts.find((font) => font.id === req.body?.fontId && font.enabled !== false);
+  if (text && !selectedFont) {
+    return res.status(409).json({ success: false, code: 'FONT_UNAVAILABLE', error: '字體已停用或尚未選擇，請重新選擇字體' });
+  }
   const productColor = safeText(req.body?.productColor, 20);
   const selectedColor = productColor
     ? store.config.productColors.find((color) => color.id === productColor)
@@ -469,19 +477,22 @@ app.post('/api/admin/restore-backup', requireAdmin, (req, res) => {
 
   const defaults = defaultStore();
   const savedConfig = incoming.config || {};
-  const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : [];
-  const builtInIds = new Set(defaults.config.fonts.map((font) => font.id));
-  const uploadedFonts = savedFonts.filter((font) => (
+  const savedFonts = Array.isArray(savedConfig.fonts) ? savedConfig.fonts : defaults.config.fonts;
+  const validFonts = savedFonts.filter((font) => (
     font &&
     typeof font === 'object' &&
-    !builtInIds.has(String(font.id || '')) &&
     typeof font.id === 'string' &&
     typeof font.name === 'string' &&
-    typeof font.data === 'string' &&
-    /^data:(font\/|application\/(font|octet-stream|x-font-|vnd\.ms-fontobject)).*;base64,/i.test(font.data) &&
-    font.data.length <= 12 * 1024 * 1024
+    typeof font.family === 'string' &&
+    (!font.data || (typeof font.data === 'string' &&
+      /^data:(font\/|application\/(font|octet-stream|x-font-|vnd\.ms-fontobject)).*;base64,/i.test(font.data) &&
+      font.data.length <= 12 * 1024 * 1024)) &&
+    (!font.url || (typeof font.url === 'string' && /^https?:\/\//i.test(font.url)))
   ));
-  const fonts = defaults.config.fonts.concat(uploadedFonts);
+  if (validFonts.length !== savedFonts.length || new Set(validFonts.map((font) => font.id)).size !== validFonts.length) {
+    return res.status(400).json({ success: false, error: '備份中有無效或重複字體，已停止還原以保留資料' });
+  }
+  const fonts = normalizeFonts(validFonts);
 
   const savedColors = Array.isArray(savedConfig.productColors) ? savedConfig.productColors : [];
   const productColors = defaults.config.productColors.map((defaultColor) => ({
@@ -649,15 +660,25 @@ app.post('/api/admin/fonts', requireAdmin, (req, res) => {
     return res.status(400).json({ success: false, error: '字體檔案不可超過 9MB' });
   }
   const id = 'font-' + crypto.randomBytes(6).toString('hex');
-  store.config.fonts.push({ id, name, family: 'Peyson_' + id.replace(/-/g, '_'), data, mime, builtIn: false });
+  store.config.fonts.push({ id, name, family: 'Peyson_' + id.replace(/-/g, '_'), data, mime, enabled: req.body?.enabled === true });
   saveStore();
   res.json({ success: true, font: store.config.fonts.at(-1) });
+});
+
+app.patch('/api/admin/fonts/:id', requireAdmin, (req, res) => {
+  const font = store.config.fonts.find((item) => item.id === req.params.id);
+  if (!font) return res.status(404).json({ success: false, error: '找不到字體' });
+  if (typeof req.body?.enabled !== 'boolean') {
+    return res.status(400).json({ success: false, error: '請指定是否在前台使用' });
+  }
+  font.enabled = req.body.enabled;
+  saveStore();
+  res.json({ success: true, id: font.id, enabled: font.enabled });
 });
 
 app.delete('/api/admin/fonts/:id', requireAdmin, (req, res) => {
   const font = store.config.fonts.find((item) => item.id === req.params.id);
   if (!font) return res.status(404).json({ success: false, error: '找不到字體' });
-  if (font.builtIn) return res.status(400).json({ success: false, error: '內建字體不可刪除' });
   store.config.fonts = store.config.fonts.filter((item) => item.id !== req.params.id);
   saveStore();
   res.json({ success: true });
