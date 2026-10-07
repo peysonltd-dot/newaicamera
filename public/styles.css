@@ -124,6 +124,7 @@ input:focus, select:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(30,30
 .job-meta { min-width: 0; }
 .job-meta strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .job-meta small { color: var(--muted); display: block; margin-top: 4px; }
+.job-meta .job-font { color: var(--ink); font-weight: 700; }
 .job-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
 .mini-button { border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 10px; font-size: 12px; }
 .mini-button.dark { color: #fff; background: #111; border-color: #111; }

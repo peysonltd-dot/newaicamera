@@ -395,6 +395,7 @@ app.post('/api/jobs', (req, res) => {
     orientationName: selectedOrientation?.name || '',
     text,
     fontId: safeText(req.body?.fontId, 60),
+    fontName: text ? selectedFont.name : '',
     strokeWidth: Number(req.body?.strokeWidth || 0),
     png: req.body.png,
     thumbnail: validateDataUrl(req.body?.thumbnail) ? req.body.thumbnail : '',
@@ -450,6 +451,9 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/jobs', requireAdmin, (req, res) => {
   const jobs = store.jobs.map(({ png, svg, ...job }) => ({
     ...job,
+    fontName: job.mode === 'handwriting' ? '' : (
+      job.fontName || store.config.fonts.find((font) => font.id === job.fontId)?.name || ''
+    ),
     hasPng: Boolean(png),
     hasSvg: Boolean(svg)
   }));
@@ -679,6 +683,10 @@ app.patch('/api/admin/fonts/:id', requireAdmin, (req, res) => {
 app.delete('/api/admin/fonts/:id', requireAdmin, (req, res) => {
   const font = store.config.fonts.find((item) => item.id === req.params.id);
   if (!font) return res.status(404).json({ success: false, error: '找不到字體' });
+  // Preserve the label for older orders that predate font-name snapshots.
+  for (const job of store.jobs) {
+    if (job.fontId === font.id && job.mode !== 'handwriting' && !job.fontName) job.fontName = font.name;
+  }
   store.config.fonts = store.config.fonts.filter((item) => item.id !== req.params.id);
   saveStore();
   res.json({ success: true });

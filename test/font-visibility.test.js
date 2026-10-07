@@ -60,7 +60,19 @@ test('font visibility preserves the catalog, jobs, settings and backup state', a
   assert.equal(originalConfig.fonts.length, 10);
   assert.ok(originalConfig.fonts.every((font) => font.enabled && !font.builtIn));
   await api('/api/admin/config', 'PUT', { ...originalConfig, autoPrint: false });
-  await api('/api/jobs', 'POST', { text: 'Previous order', fontId: 'system-serif', png });
+  await api('/api/jobs', 'POST', { text: 'Previous order', fontId: 'system-serif', fontName: 'Untrusted label', png });
+  const savedJob = (await backup()).jobs[0];
+  assert.equal(savedJob.fontName, '典雅明體');
+  // Staff can complete or cancel a waiting order without downloading its PNG.
+  for (const status of ['completed', 'processing', 'cancelled', 'waiting']) {
+    await api('/api/admin/jobs/' + savedJob.id, 'PATCH', { status });
+    const current = await backup();
+    assert.equal(current.jobs[0].status, status);
+    assert.equal(current.jobs[0].png, png);
+    assert.equal(current.jobs[0].fontName, '典雅明體');
+    assert.equal(current.jobs[0].printStatus, savedJob.printStatus);
+    assert.equal(current.counter, 1);
+  }
   const before = await backup();
   await toggle('system-serif', false);
   assert.equal((await publicFonts()).length, 9);
@@ -106,10 +118,15 @@ test('font visibility preserves the catalog, jobs, settings and backup state', a
   await start();
   assert.deepEqual((await backup()).config.fonts, []);
   const legacy = structuredClone(before);
+  delete legacy.jobs[0].fontName;
   legacy.config.fonts = legacy.config.fonts.slice(0, 2).map(({ enabled, ...font }) => ({ ...font, builtIn: true }));
   await api('/api/admin/restore-backup', 'POST', { confirmation: '還原活動資料', backup: legacy });
   assert.equal((await publicFonts()).length, 2);
-  assert.deepEqual((await backup()).jobs, before.jobs);
+  assert.deepEqual((await backup()).jobs, legacy.jobs);
+  assert.equal((await api('/api/admin/jobs')).jobs[0].fontName, '典雅明體');
+  await api('/api/admin/fonts/system-serif', 'DELETE');
+  assert.equal((await api('/api/admin/jobs')).jobs[0].fontName, '典雅明體');
+  await api('/api/admin/restore-backup', 'POST', { confirmation: '還原活動資料', backup: legacy });
   await toggle('system-serif', false);
   const mixed = await backup();
   mixed.config.fonts[0].builtIn = true;

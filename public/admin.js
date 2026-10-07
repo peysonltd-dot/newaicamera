@@ -107,7 +107,6 @@
       title.textContent = job.mode === 'handwriting'
         ? '手寫簽名'
         : (job.mode === 'combined' ? ((job.text || '文字') + '＋手寫') : (job.text || '文字雷雕'));
-      if ((job.mode === 'typing' || job.mode === 'combined') && job.fontId) title.title = '字體：' + job.fontId;
       const line1 = document.createElement('small');
       const details = [];
       if (job.productColorName) details.push(job.productColorName + '色商品');
@@ -119,6 +118,13 @@
       if (job.printStatus === 'failed') line2.className = 'print-failed';
       meta.append(title, line1, line2);
 
+      const fontLine = document.createElement('small');
+      fontLine.className = 'job-font';
+      fontLine.textContent = job.mode === 'handwriting'
+        ? '字體：手寫（不使用字體）'
+        : '字體：' + (job.fontName || (job.fontId ? '無法辨識（' + job.fontId + '）' : '未記錄'));
+      meta.appendChild(fontLine);
+
       if (job.thumbnail) {
         const image = document.createElement('img');
         image.src = job.thumbnail;
@@ -129,17 +135,20 @@
 
       const actions = document.createElement('div');
       actions.className = 'job-actions';
+      if (job.status === 'waiting' || job.status === 'processing') {
+        actions.appendChild(button('完成', 'mini-button dark', () => updateJob(job.id, 'completed')));
+      }
+      if (job.status !== 'cancelled') {
+        actions.appendChild(button('取消訂單', 'mini-button danger-text', () => cancelJob(job.id)));
+      }
       actions.appendChild(button('下載 PNG', 'mini-button dark', () => downloadPng(job)));
-      if (job.status === 'processing') {
-        actions.appendChild(button('標記完成', 'mini-button dark', () => updateJob(job.id, 'completed')));
-      } else if (job.status === 'completed') {
+      if (job.status === 'completed') {
         actions.appendChild(button('改回製作中', 'mini-button', () => updateJob(job.id, 'processing')));
       } else if (job.status === 'cancelled') {
         actions.appendChild(button('恢復等待', 'mini-button', () => updateJob(job.id, 'waiting')));
       }
       if (job.status !== 'cancelled') {
         actions.appendChild(button('補印票券', 'mini-button', () => reprint(job.id)));
-        actions.appendChild(button('取消訂單', 'mini-button danger-text', () => cancelJob(job.id)));
       }
 
       card.append(number, meta, actions);
